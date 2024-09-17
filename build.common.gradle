@@ -21,7 +21,7 @@ apply plugin: 'com.android.application'
 
 android {
 
-    compileSdkVersion 29
+    compileSdkVersion 30
 
     signingConfigs {
         release {
@@ -47,9 +47,6 @@ android {
         }
     }
 
-    aaptOptions {
-        noCompress "tflite"
-    }
 
     defaultConfig {
         signingConfig signingConfigs.debug
@@ -57,7 +54,6 @@ android {
         minSdkVersion 24
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 28
-        multiDexEnabled true
 
         /**
          * We keep the versionCode and versionName of robot controller applications in sync with
@@ -107,13 +103,10 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 
-    packagingOptions {
-        pickFirst '**/*.so'
-    }
     sourceSets.main {
         jni.srcDirs = []
         jniLibs.srcDir rootProject.file('libs')
