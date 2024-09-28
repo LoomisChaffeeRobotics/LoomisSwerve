@@ -9,6 +9,7 @@ import com.arcrobotics.ftclib.geometry.Translation2d;
 import com.danpeled.swerveftclib.Swerve.SwerveDrive;
 import com.danpeled.swerveftclib.Swerve.SwerveDriveCoefficients;
 import com.danpeled.swerveftclib.Swerve.modules.AxonSwerveModule;
+import com.danpeled.swerveftclib.Swerve.modules.SwerveModule;
 import com.danpeled.swerveftclib.Swerve.modules.SwerveModuleConfiguration;
 import com.danpeled.swerveftclib.examples.ExampleSwerveSubsystem;
 import com.danpeled.swerveftclib.examples.SwerveCommands;
@@ -27,7 +28,7 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 public class testSwerveTeleOp extends CommandOpMode {
     // Constants for motor and servo control
     private static final double TICKS_PER_REVOLUTION = 537.6;  // example value
-    private static final double WHEEL_CIRCUMFERENCE = Math.PI * 0.1; // Wheel circumference in meters (example)
+    private static final double WHEEL_CIRCUMFERENCE = Math.PI * .055; // Wheel circumference in meters (example)
     SwerveDrive swerveDrive;
     GamepadEx driver;
     ExampleSwerveSubsystem swerveSubsystem;
@@ -45,17 +46,14 @@ public class testSwerveTeleOp extends CommandOpMode {
                 new PIDFCoefficients(1, 0, 0, 0),
                 new PIDFCoefficients(1, 0, 0, 0),
                 new Translation2d(5, 5),
-                new Translation2d(-5, 5),
+                new Translation2d(0, 0),
                 new Translation2d(5, -5),
                 new Translation2d(-5, -5),
                 "imu 1")
         );
 
-        swerveDrive.init(AxonSwerveModule.class, new SwerveModuleConfiguration[]{
+        swerveDrive.init(SwerveModule.class, new SwerveModuleConfiguration[]{
                 SwerveModuleConfiguration.create("fl_drive", "fl_angle", "fl_encoder"),
-                SwerveModuleConfiguration.create("fr_drive", "fr_angle", "fr_encoder"),
-                SwerveModuleConfiguration.create("bl_drive", "bl_angle", "bl_encoder"),
-                SwerveModuleConfiguration.create("br_drive", "br_angle", "br_encoder")
         });
 
         swerveSubsystem = new ExampleSwerveSubsystem(swerveDrive);
