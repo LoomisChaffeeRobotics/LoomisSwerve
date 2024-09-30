@@ -1,8 +1,13 @@
+
 apply from: '../build.common.gradle'
 apply from: '../build.dependencies.gradle'
 
+
 android {
     namespace = 'org.firstinspires.ftc.teamcode'
+    defaultConfig {
+        applicationId "org.firstinspires.ftc.teamcode"
+    }
     androidResources {
         noCompress 'tflite'
     }
@@ -17,6 +22,7 @@ android {
 repositories {
     maven { url = 'https://jitpack.io' }
 }
+
 
 dependencies {
     implementation project(':FtcRobotController')
