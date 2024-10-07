@@ -8,6 +8,7 @@ import com.arcrobotics.ftclib.kinematics.wpilibkinematics.SwerveDriveKinematics;
 import com.arcrobotics.ftclib.kinematics.wpilibkinematics.SwerveDriveOdometry;
 import com.arcrobotics.ftclib.kinematics.wpilibkinematics.SwerveModuleState;
 import com.danpeled.swerveftclib.Swerve.modules.AxonSwerveModule;
+import com.danpeled.swerveftclib.Swerve.modules.ServoExSwerveModule;
 import com.danpeled.swerveftclib.Swerve.modules.SwerveModule;
 import com.danpeled.swerveftclib.Swerve.modules.SwerveModuleConfiguration;
 import com.danpeled.swerveftclib.util.BaseDrive;
@@ -119,17 +120,19 @@ public class SwerveDrive extends BaseDrive {
                 }
             }
 
-            m_fr = clazz.getDeclaredConstructor(SwerveModuleConfiguration.class, SwerveDriveCoefficients.class, HardwareMap.class).newInstance(configurations[0], m_coefficients, m_hardwareMap);
-            m_bl = clazz.getDeclaredConstructor(SwerveModuleConfiguration.class, SwerveDriveCoefficients.class, HardwareMap.class).newInstance(configurations[1], m_coefficients, m_hardwareMap);
-            m_fl = clazz.getDeclaredConstructor(SwerveModuleConfiguration.class, SwerveDriveCoefficients.class, HardwareMap.class).newInstance(configurations[2], m_coefficients, m_hardwareMap);
-            m_br = clazz.getDeclaredConstructor(SwerveModuleConfiguration.class, SwerveDriveCoefficients.class, HardwareMap.class).newInstance(configurations[3], m_coefficients, m_hardwareMap);
 
+            m_fr = new ServoExSwerveModule(configurations[0], m_coefficients, m_hardwareMap);
+            m_bl = new ServoExSwerveModule(configurations[1], m_coefficients, m_hardwareMap);
+            m_fl = new ServoExSwerveModule(configurations[2], m_coefficients, m_hardwareMap);
+            m_br = new ServoExSwerveModule(configurations[3], m_coefficients, m_hardwareMap);
             initIMU(m_coefficients.imuName);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
+    public SwerveModule getFr() {
+        return m_fr;
+    }
 
     /**
      * Initializes the IMU.

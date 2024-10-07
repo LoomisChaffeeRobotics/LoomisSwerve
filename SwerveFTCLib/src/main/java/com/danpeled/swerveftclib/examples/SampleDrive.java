@@ -9,10 +9,12 @@ import com.arcrobotics.ftclib.geometry.Translation2d;
 import com.danpeled.swerveftclib.Swerve.SwerveDrive;
 import com.danpeled.swerveftclib.Swerve.SwerveDriveCoefficients;
 import com.danpeled.swerveftclib.Swerve.modules.AxonSwerveModule;
+import com.danpeled.swerveftclib.Swerve.modules.ServoExSwerveModule;
 import com.danpeled.swerveftclib.Swerve.modules.SwerveModuleConfiguration;
 import com.danpeled.swerveftclib.util.BaseDrive;
 import com.danpeled.swerveftclib.util.Location;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 /**
@@ -25,7 +27,7 @@ import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 public class SampleDrive extends CommandOpMode {
     // Constants for motor and servo control
     private static final double TICKS_PER_REVOLUTION = 537.6;  // example value
-    private static final double WHEEL_CIRCUMFERENCE = Math.PI * 0.1; // Wheel circumference in meters (example)
+    private static final double WHEEL_CIRCUMFERENCE = Math.PI * 0.055; // Wheel circumference in meters (example)
     SwerveDrive swerveDrive;
     GamepadEx driver;
     ExampleSwerveSubsystem swerveSubsystem;
@@ -40,16 +42,16 @@ public class SampleDrive extends CommandOpMode {
 
         swerveDrive = new SwerveDrive(this, new SwerveDriveCoefficients(
                 WHEEL_CIRCUMFERENCE, TICKS_PER_REVOLUTION,
-                new PIDFCoefficients(1, 0, 0, 0),
-                new PIDFCoefficients(1, 0, 0, 0),
+                new PIDFCoefficients(0.5, 0, 0, 0),
+                new PIDFCoefficients(3e-2, 0, 0.00075, 0),
                 new Translation2d(5, 5),
                 new Translation2d(-5, 5),
                 new Translation2d(5, -5),
                 new Translation2d(-5, -5),
-                "imu 1")
+                "imu")
         );
 
-        swerveDrive.init(AxonSwerveModule.class, new SwerveModuleConfiguration[]{
+        swerveDrive.init(ServoExSwerveModule.class, new SwerveModuleConfiguration[]{
                 SwerveModuleConfiguration.create("fl_drive", "fl_angle", "fl_encoder"),
                 SwerveModuleConfiguration.create("fr_drive", "fr_angle", "fr_encoder"),
                 SwerveModuleConfiguration.create("bl_drive", "bl_angle", "bl_encoder"),
@@ -80,11 +82,28 @@ public class SampleDrive extends CommandOpMode {
         exampleButton.whenPressed(new SwerveCommands.GoTo(swerveSubsystem, new Location(0, 0), defaultGoToSettings));
 
         // Register the swerve drive subsystem
-        register(swerveSubsystem);
+        if (swerveDrive.getFr() == null) {
+            telemetry.addData("ad", true);
+        } else {
+            telemetry.addData("ad", false);
+        }
+            telemetry.update();
+
+        swerveSubsystem.register();
     }
 
     @Override
     public void run() {
-        swerveSubsystem.getDefaultCommand().schedule();
+        swerveSubsystem.setDefaultCommand(new SwerveCommands.SetPowerOriented(
+                swerveSubsystem,
+                driver::getLeftX,
+                driver::getLeftY,
+                driver::getRightX,
+                true));
+        telemetry.addData("s", swerveSubsystem.getDefaultCommand().getName());
+        telemetry.addData("a", swerveSubsystem.getDefaultCommand());
+        swerveSubsystem.periodic();
+
+        telemetry.update();
     }
 }

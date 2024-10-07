@@ -34,14 +34,15 @@ public class EncoderTest extends LinearOpMode {
     IMU imu;
     Telemetry telemetry2;
     //TODO: Implement servo PID, attach to detect spin of small pulley shaft
-    public static double kP = 0.001;
-    public static double kI = 0.0005;
-    public static double kD = 0;
-    double targetAngle;
+    public static double kP = 3e-2;
+    public static double kI = 0;
+    public static double kD = 0.00075;
+    public static double targetAngle;
     double currentAngle;
     double adjustedAngle;
     private final double degreesPerVolt = 360/3.3;
     double currentVoltage;
+    double offset;
     double error;
     double lastError;
     double integral;
@@ -54,12 +55,12 @@ public class EncoderTest extends LinearOpMode {
         fl_angle = hardwareMap.get(CRServo.class, "fl_angle");
         fl_encoder = hardwareMap.get(AnalogInput.class, "fl_encoder"); // AS5600
         telemetry2 = dashboard.getTelemetry(); // this is for the dashboard, normal telemetry is for DS
-        targetAngle = fl_encoder.getVoltage()*degreesPerVolt;
         timer = new ElapsedTime();
         waitForStart();
         while (!isStopRequested()) {
             currentVoltage = fl_encoder.getVoltage();
             currentAngle = currentVoltage * degreesPerVolt;
+            adjustedAngle = currentAngle + offset;
 
             if (Math.abs(targetAngle-currentAngle) > 90 && Math.signum(targetAngle - currentAngle) == 1 ) {
 
