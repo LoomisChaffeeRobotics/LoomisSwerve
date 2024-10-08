@@ -21,10 +21,12 @@ public class voltageToAngleTest extends OpMode {
         blEnc = hardwareMap.get(AnalogInput.class, "bl_encoder");
         brEnc = hardwareMap.get(AnalogInput.class, "br_encoder");
 
-        flAngle = hardwareMap.get(CRServo.class, "fl_angle");
-        frAngle = hardwareMap.get(CRServo.class, "fr_angle");
-        blAngle = hardwareMap.get(CRServo.class, "bl_angle");
-        brAngle = hardwareMap.get(CRServo.class, "br_angle");
+//
+//        flAngle = hardwareMap.get(CRServo.class, "fl_angle");
+//        frAngle = hardwareMap.get(CRServo.class, "fr_angle");
+//        blAngle = hardwareMap.get(CRServo.class, "bl_angle");
+//        brAngle = hardwareMap.get(CRServo.class, "br_angle");
+
 
         dashboard = FtcDashboard.getInstance();
         telemetry2 = dashboard.getTelemetry();
@@ -33,5 +35,15 @@ public class voltageToAngleTest extends OpMode {
     @Override
     public void loop() {
 
+        telemetry.addData("flEnc", flEnc.getVoltage());
+        telemetry2.addData("flEnc", flEnc.getVoltage());
+        telemetry.addData("frEnc", frEnc.getVoltage());
+        telemetry2.addData("frEnc", frEnc.getVoltage());
+        telemetry.addData("blEnc", blEnc.getVoltage());
+        telemetry2.addData("blEnc", blEnc.getVoltage());
+        telemetry.addData("brEnc", brEnc.getVoltage());
+        telemetry2.addData("brEnc", brEnc.getVoltage());
+
+        telemetry.update();
     }
 }
