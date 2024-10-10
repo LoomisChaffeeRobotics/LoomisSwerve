@@ -24,7 +24,7 @@ public class OptimalAngleCalculator {
     }
     }
     public double normalizeAngle(double angle) {
-        return (angle % 360 + 360) % 360;
+        return (angle % 360);
     }
     public double getTargetAngle() {
         return targetAngle;
