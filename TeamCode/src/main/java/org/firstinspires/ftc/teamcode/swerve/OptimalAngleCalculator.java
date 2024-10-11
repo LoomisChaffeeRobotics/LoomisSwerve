@@ -4,10 +4,11 @@ public class OptimalAngleCalculator {
     public double targetAngle;
     public boolean requiresReversing;
 
-    public OptimalAngleCalculator(double currentAngle, double vectorAngle)
-    {
-        calculateOptimalAngle(currentAngle, vectorAngle);
-    }
+//    public OptimalAngleCalculator(double currentAngle, double vectorAngle)
+//    {
+//        calculateOptimalAngle(currentAngle, vectorAngle);
+//    }
+    // idt there are any parameters to need to be initialized (faster runtimes) but I might be wrong
     public void calculateOptimalAngle(double currentAngle, double vectorAngle)
     {
         double normalizedCurrentAngle = normalizeAngle(currentAngle);
@@ -21,7 +22,6 @@ public class OptimalAngleCalculator {
             targetAngle = normalizedVectorAngle;
             requiresReversing = false;
         }
-    }
     }
     public double normalizeAngle(double angle) {
         return (angle % 360);
