@@ -45,5 +45,6 @@ public class voltageToAngleTest extends OpMode {
         telemetry2.addData("brEnc", brEnc.getVoltage());
 
         telemetry.update();
+        telemetry2.update();
     }
 }
