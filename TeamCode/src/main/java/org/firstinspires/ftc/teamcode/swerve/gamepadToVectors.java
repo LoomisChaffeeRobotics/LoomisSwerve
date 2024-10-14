@@ -13,6 +13,9 @@ public class gamepadToVectors {
 
     public double maxTranslationSpeed = 3.0;
     public double maxRotationSpeed = 0.5;
+    public static double ROBOT_LENGTH = 1.0;  // Length
+    public static double ROBOT_WIDTH = 1.0;   // Width
+
 
     public double[] limitVector(double[] vector, double maxSpeed) {
         double magnitude = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
@@ -33,17 +36,15 @@ public class gamepadToVectors {
         return rotationX * maxRotationSpeed; // ask emma about gamepad
     }
 
-    public double[] getCombinedVector (double x, double y,double rx) {
+    public double[] getCombinedVector (double x, double y,double rx, Wheel wheel) {
 
 
             double[] translationVector = getTranslationVector(x, y);
             double rotationSpeed = getRotationSpeed(rx);
 
             double[] combinedVector = {
-                    translationVector[0] + rotationSpeed,
-                    translationVector[1] + rotationSpeed,
-                    rotationSpeed= Math.cos(-40/rx)*3,
-                    translationVector[1]= Math.acos(-45/x+y)*3,
+                    translationVector[0] + rotationSpeed*Math.cos(getWheelAngle(wheel)),
+                    translationVector[1] + rotationSpeed*Math.sin(getWheelAngle(wheel)),
             };
 
             // public static variables for Length and Width
@@ -51,42 +52,40 @@ public class gamepadToVectors {
             //arctan calculations as seen above
             //return based on which wheel it is after adding it
 
-            return translationVector;
+            return combinedVector;
 
     }
 
 
 
         // public static variables for robot dimensions
-        public static double ROBOT_LENGTH = 1.0;  // Length
-        public static double ROBOT_WIDTH = 1.0;   // Width
 
         //which wheel
-        public enum Wheel {
-            fl, bl, fr, br
-        }
+    public enum Wheel {
+        fl, bl, fr, br
+    }
 
-        public double getRotationRadius() {
-            return 0.5 * Math.sqrt(Math.pow(ROBOT_WIDTH, 2) + Math.pow(ROBOT_LENGTH, 2));
-        }
+    public double getRotationRadius() {
+        return 0.5 * Math.sqrt(Math.pow(ROBOT_WIDTH, 2) + Math.pow(ROBOT_LENGTH, 2));
+    }
 
 //arc tan calculations
-        public double getWheelAngle(Wheel wheel) {
-            double angle = 0.0;
-            switch (wheel) {
-                case fl:
-                    angle = Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) - Math.PI / 2;
-                    break;
-                case bl:
-                    angle = Math.PI / 2 - Math.atan(ROBOT_WIDTH / ROBOT_LENGTH);
-                    break;
-                case fr:
-                    angle = (Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) )+ Math.PI / 2;
-                    break;
-                case br:
-                    angle = (Math.PI / 2) + Math.atan(ROBOT_WIDTH / ROBOT_LENGTH);
-                    break;
-            }
-            return angle;
+    public double getWheelAngle(Wheel wheel) {
+        double angle = 0.0;
+        switch (wheel) {
+            case fl:
+                angle = Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) - Math.PI / 2;
+                break;
+            case bl:
+                angle = Math.PI / 2 - Math.atan(ROBOT_WIDTH / ROBOT_LENGTH);
+                break;
+            case fr:
+                angle = (Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) )+ Math.PI / 2;
+                break;
+            case br:
+                angle = (Math.PI / 2) + Math.atan(ROBOT_WIDTH / ROBOT_LENGTH);
+                break;
         }
+        return angle;
     }
+}
