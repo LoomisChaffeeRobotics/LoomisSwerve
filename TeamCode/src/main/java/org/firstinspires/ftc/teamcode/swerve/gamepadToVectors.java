@@ -33,21 +33,26 @@ public class gamepadToVectors {
         return rotationX * maxRotationSpeed; // ask emma about gamepad
     }
 
-    public double[] getCombinedVector () {
-        double[] translationVector = getTranslationVector();
-        double rotationSpeed = getRotationSpeed();
+    public double[] getCombinedVector (double x, double y,double rx) {
 
-        double[] combinedVector = {
-                translationVector[0] + rotationSpeed,
-                translationVector[1] + rotationSpeed
-        };
 
-    // public static variables for Length and Width
-    //some way to tell which wheel is being talked about
-    //arctan calculations as seen above
-    //return based on which wheel it is after adding it
+            double[] translationVector = getTranslationVector(x, y);
+            double rotationSpeed = getRotationSpeed(rx);
 
-        return translationVector;
+            double[] combinedVector = {
+                    translationVector[0] + rotationSpeed,
+                    translationVector[1] + rotationSpeed,
+                    rotationSpeed= Math.cos(-40/rx)*3,
+                    translationVector[1]= Math.acos(-45/x+y)*3,
+            };
+
+            // public static variables for Length and Width
+            //some way to tell which wheel is being talked about
+            //arctan calculations as seen above
+            //return based on which wheel it is after adding it
+
+            return translationVector;
+
     }
 
 
