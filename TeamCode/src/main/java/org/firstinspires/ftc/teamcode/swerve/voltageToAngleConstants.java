@@ -1,4 +1,6 @@
 package org.firstinspires.ftc.teamcode.swerve;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.lang.Double;
 import android.os.Environment;
@@ -7,7 +9,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class voltageToAngleConstants {
     // (Angle, Voltage)
@@ -40,11 +44,39 @@ public class voltageToAngleConstants {
     Map<Double,Double> br = new HashMap<Double, Double>() {{
 
     }};
+    List<Map<Double, Double>> modulesTable = new ArrayList<Map<Double, Double>>() {{
+        add(0, original);
+        add(1, fr);
+        add(2, bl);
+        add(3, br);
+    }};
+
     public void loop() {
 
     }
-    public void smallPulleyAngleAccumulator(double inputSmallAngle, int module) {
-        
+    public double voltsToAngle(double voltage, int module) {
+        double out;
+        Map<Double, Double> targetTable = modulesTable.get(0);
+        Set<Double> keySet = targetTable.keySet();
+        Collection<Double> valueSet = targetTable.values();
+        Object[] values = valueSet.toArray();
+        Object[] keys = keySet.toArray();
+        for (int i = 0; i < targetTable.size(); i++) {
+            if (voltage <= Double.parseDouble(keys[i].toString()) && voltage >= Double.parseDouble(keys[i+1].toString())) {
+                double y1, x1, y2, x2, m;
+                x2 = Double.parseDouble(keys[i+1].toString());
+                x1 = Double.parseDouble(keys[i].toString());
+                y1 = Double.parseDouble(values[i].toString());
+                y2 = Double.parseDouble(values[i+1].toString());
+                m = (y2-y1)/(x2-x1);
+                out = (m*(voltage-x1))+y1;
+                return out;
+            }
+        }
+        return 0;
+    }
+    public void smallPulleyAngleAccumulator(double inputVoltage, int module) {
+
     }
 //    public void voltageToAngleConstants() {
 //        fl.put(74.0, 1.700);
