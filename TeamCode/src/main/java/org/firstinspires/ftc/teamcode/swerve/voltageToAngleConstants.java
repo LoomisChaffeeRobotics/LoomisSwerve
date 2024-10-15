@@ -12,25 +12,24 @@ import java.util.Map;
 public class voltageToAngleConstants {
     // (Angle, Voltage)
     //TODO: Implement tracking code to keep track of direction of motion knowing the gear ratio
-    double degBigPerRev = 0.3947368 * 360;
+    double mainDegPerRev = 0.3947368 * 360;
 //    double degreesPerVolt = 43.0100675418;
 //    double[] startingOffset;
-    int i;
-    int j;
-    int k;
-    int l;
-    Map<Double,Double> fl = new HashMap<Double, Double>() {{
-        put(0.0, 1.827);
-        put(90.0, 1.047);
-        put(45.0, 1.457);
-        put(135.0, 0.777);
-        put(180.0, 0.228);
-        put(204.0, 0.0);
-        put(204.0, 3.307);
-        put(225.0, 3.147);
-        put(270.0, 2.686);
-        put(315.0, 2.271);
-        put(360.0, 1.827);
+    int[] rotations;
+    double[] sm;
+    double[] angle;
+    Map<Double,Double> original = new HashMap<Double, Double>() {{
+        put(0.0, 204.0);
+        put(0.228, 180.0);
+        put(0.777, 135.0);
+        put(1.047, 90.0);
+        put(1.457, 45.0);
+        put(1.827, 0.0);
+        put(1.828, 360.0);
+        put(2.271, 315.0);
+        put(2.686, 270.0);
+        put(3.147, 225.0);
+        put(3.307, 204.0);
     }};
     Map<Double,Double> fr = new HashMap<Double, Double>() {{
 
@@ -41,7 +40,12 @@ public class voltageToAngleConstants {
     Map<Double,Double> br = new HashMap<Double, Double>() {{
 
     }};
+    public void loop() {
 
+    }
+    public void smallPulleyAngleAccumulator(double inputSmallAngle, int module) {
+        
+    }
 //    public void voltageToAngleConstants() {
 //        fl.put(74.0, 1.700);
 //        fl.put(65.0, 2.000);
