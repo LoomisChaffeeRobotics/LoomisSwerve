@@ -1,9 +1,19 @@
 package org.firstinspires.ftc.teamcode.swerve;
+import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.lang.Double;
 import android.os.Environment;
+
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.AnalogInput;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -15,13 +25,62 @@ import java.util.Set;
 
 public class voltageToAngleConstants {
     // (Angle, Voltage)
-    //TODO: Implement tracking code to keep track of direction of motion knowing the gear ratio
-    double mainDegPerRev = 0.3947368 * 360;
+    /* TODO: it's a problem that rotations --> small pulley, but stored csv file is in big pulley measurements
+        !! Combine both Big pulley angles and small pulley ang/rotations there, and parse it after !!
+     */
+    double mainDegPerRev = 0.3947368 * 360; // small:big times 360 deg -- how much big revolves per rotation of small pulley
 //    double degreesPerVolt = 43.0100675418;
 //    double[] startingOffset;
-    int[] rotations;
-    double[] sm;
-    double[] angle;
+    int[] rotations; // full small pulley rotations, added to how much degrees of current rotation
+    AnalogInput[] encoders; // list of objects, comes from user getting hardware map inputs
+    String logFilePath = String.format("%s/FIRST/data/wheelAngles.csv", Environment.getExternalStorageDirectory().getAbsolutePath());
+    FileWriter fileWriter = new FileWriter(logFilePath, false);
+    CSVWriter csvWriter = new CSVWriter(fileWriter);
+    FileReader fileReader = new FileReader(logFilePath);
+    CSVReader csvReader = new CSVReader(fileReader);
+    double[] voltages; // these are from the analog inputs
+    double[] sm; // small pulley angle values NO ROTATIONS
+    double[] angle; // big pulley angle values
+    double[] lastVoltage; // for checking for wraparounds, and which direction
+    double[] lastAngle; // last big pulley angle values what is this for??
+    String[] lastAngStringsWriting; // last angle, but as strings
+    String[] smallAngString;
+    String[] smallRotString;
+    String[] valuesReading = null; // used for reading at the beginning of opmodes
+    OpMode opMode; // for telemetry when done reading
+    public voltageToAngleConstants(OpMode opMode, HardwareMap hw, String[] encoderNames) throws IOException {
+        this.opMode = opMode;
+        for (int i = 0; i < encoderNames.length; i++) {
+            encoders[i] = hw.get(AnalogInput.class, encoderNames[0]);
+        }
+
+    }
+
+    public void init_loop() {
+        // Supposed to check for the last value in the csv file for most recent rotations
+        // TODO: check this very much
+        // Also, what if we just rewrote over and over on the same line? how?
+        try {
+            String[] line = csvReader.readNext(); // I want this to stop happening once the else
+            if (line != null) {
+                valuesReading = line;
+            }
+            // this is supposed to go line by line replacing valuesReading with new line content
+            // when it ends, valueReading should be the last values of opMode
+            // basically, can't move the wheels unpowered because bad
+        } catch (IOException e) {
+            // go through values reading to split off the three things and assign them appropriately
+            angle = Arrays.stream(Arrays.copyOfRange(valuesReading,0,4)).mapToDouble(Double::parseDouble).toArray();
+            lastAngle = angle;
+            rotations = Arrays.stream(Arrays.copyOfRange(valuesReading,4,8)).mapToInt(Integer::parseInt).toArray();
+            sm = Arrays.stream(Arrays.copyOfRange(valuesReading,8,12)).mapToDouble(Double::parseDouble).toArray();
+            opMode.telemetry.addLine("Done Reading");
+            opMode.telemetry.addData("Big Angles", angle);
+            opMode.telemetry.addData("Small rotations", rotations);
+            opMode.telemetry.addData("Small Angles", sm);
+            opMode.telemetry.update();
+        }
+    }
     Map<Double,Double> original = new HashMap<Double, Double>() {{
         put(0.0, 204.0);
         put(0.228, 180.0);
@@ -49,34 +108,61 @@ public class voltageToAngleConstants {
         add(1, fr);
         add(2, bl);
         add(3, br);
-    }};
+    }}; // list of maps lol
 
     public void loop() {
-
+        String[] writingFinal;
+        for (int m = 0; m < modulesTable.size(); m++) {
+            voltages[m] = encoders[m].getVoltage();
+            smallPulleyAngleAccumulator(voltages[m], m);
+            lastAngle[m] = angle[m];
+            lastAngStringsWriting[m] = Double.toString(lastAngle[m]);
+            smallAngString[m] = Double.toString(sm[m]);
+            smallRotString[m] = Integer.toString(rotations[m]);
+        }
+        // go through for each module, get the newest voltage, update angle measurement, update last angles
+        writingFinal = ArrayUtils.addAll(lastAngStringsWriting,smallRotString);
+        writingFinal = ArrayUtils.addAll(writingFinal, smallAngString);
+        // it won't let me do all 3 args at a time?? idk why but i think this works to do the same thing
+        csvWriter.writeNext(writingFinal);
+        // write to the csv everything
+        // everything being big pulley angle > small pulley full rotations > small pulley angle pose
     }
     public double voltsToAngle(double voltage, int module) {
         double out;
-        Map<Double, Double> targetTable = modulesTable.get(0);
+        Map<Double, Double> targetTable = modulesTable.get(module);
         Set<Double> keySet = targetTable.keySet();
         Collection<Double> valueSet = targetTable.values();
+        // both of the below are doubles but it won't let me
         Object[] values = valueSet.toArray();
         Object[] keys = keySet.toArray();
         for (int i = 0; i < targetTable.size(); i++) {
             if (voltage <= Double.parseDouble(keys[i].toString()) && voltage >= Double.parseDouble(keys[i+1].toString())) {
+                // this might have trouble with voltages that are equal?
+                //TODO: Double check this logic esp in if
                 double y1, x1, y2, x2, m;
                 x2 = Double.parseDouble(keys[i+1].toString());
                 x1 = Double.parseDouble(keys[i].toString());
                 y1 = Double.parseDouble(values[i].toString());
                 y2 = Double.parseDouble(values[i+1].toString());
                 m = (y2-y1)/(x2-x1);
+                // point slope of the line b/w the points its between
                 out = (m*(voltage-x1))+y1;
+                // input x as the voltage into the formula
                 return out;
             }
         }
         return 0;
     }
     public void smallPulleyAngleAccumulator(double inputVoltage, int module) {
-
+        // TODO: needs checking code for sm in the beginning from new files
+        sm[module] += voltsToAngle(inputVoltage, module) - lastAngle[module];
+        // checks if that accumulation made it go over or under
+        if (sm[module] >= 360) {
+            rotations[module]++;
+        } else if (sm[module] <= 0) {
+            rotations[module]--;
+        }
     }
 //    public void voltageToAngleConstants() {
 //        fl.put(74.0, 1.700);
@@ -154,8 +240,6 @@ public class voltageToAngleConstants {
 //            return (voltage * -45);
 //        }
 //    }
-
-
 
 
 }
