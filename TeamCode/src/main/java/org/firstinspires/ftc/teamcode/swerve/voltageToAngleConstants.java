@@ -28,7 +28,7 @@ public class voltageToAngleConstants {
     /* TODO: it's a problem that rotations --> small pulley, but stored csv file is in big pulley measurements
         !! Combine both Big pulley angles and small pulley ang/rotations there, and parse it after !!
      */
-    double mainDegPerRev = 0.3947368 * 360; // small:big times 360 deg -- how much big revolves per rotation of small pulley
+    double smallToBigPulley = 0.3947368; // small:big times 360 deg -- how much big revolves per rotation of small pulley
 //    double degreesPerVolt = 43.0100675418;
 //    double[] startingOffset;
     int[] rotations; // full small pulley rotations, added to how much degrees of current rotation
@@ -115,6 +115,7 @@ public class voltageToAngleConstants {
         for (int m = 0; m < modulesTable.size(); m++) {
             voltages[m] = encoders[m].getVoltage();
             smallPulleyAngleAccumulator(voltages[m], m);
+            bigPulleyCalculator(m);
             lastAngle[m] = angle[m];
             lastAngStringsWriting[m] = Double.toString(lastAngle[m]);
             smallAngString[m] = Double.toString(sm[m]);
@@ -163,6 +164,12 @@ public class voltageToAngleConstants {
         } else if (sm[module] <= 0) {
             rotations[module]--;
         }
+
+        // this updates the small pulley things
+    }
+    public double bigPulleyCalculator(int m) {
+        double degreesRaw = sm[m] + rotations[m]; 
+        return degreesRaw * smallToBigPulley; // calculates the angle :D now put it in the optimal angle calculator
     }
 //    public void voltageToAngleConstants() {
 //        fl.put(74.0, 1.700);
