@@ -1,12 +1,17 @@
 package org.firstinspires.ftc.teamcode.swerve.tests;
 
+import androidx.annotation.RequiresPermission;
+
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.util.ReadWriteFile;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+
+import java.io.File;
 
 @TeleOp
 public class voltageToAngleTest extends OpMode {
@@ -26,7 +31,7 @@ public class voltageToAngleTest extends OpMode {
 //        frAngle = hardwareMap.get(CRServo.class, "fr_angle");
 //        blAngle = hardwareMap.get(CRServo.class, "bl_angle");
 //        brAngle = hardwareMap.get(CRServo.class, "br_angle");
-
+        ReadWriteFile.writeFile(new File("~/FIRST/wheelAngles.txt"), "");
 
         dashboard = FtcDashboard.getInstance();
         telemetry2 = dashboard.getTelemetry();
