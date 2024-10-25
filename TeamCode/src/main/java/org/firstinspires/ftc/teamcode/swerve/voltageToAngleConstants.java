@@ -90,6 +90,14 @@ public class voltageToAngleConstants {
         opMode.telemetry.addData("Small rotations", Arrays.toString(rotations));
         opMode.telemetry.addData("Small Angles", Arrays.toString(sm));
         opMode.telemetry.update();
+        if (fileDataRaw != null && !fileDataRaw.isEmpty()) {
+            lastLineValue = fileDataRaw.replace("[", "").replace("]", "");
+            valuesReading = lastLineValue.split(", ");
+            // Proceed with parsing
+        } else {
+            opMode.telemetry.addLine("No previous data found, initializing default values.");
+            // Set default values if necessary
+        }
 
 //        try {
 //
