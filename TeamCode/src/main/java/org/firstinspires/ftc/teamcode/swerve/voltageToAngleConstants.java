@@ -251,19 +251,19 @@ public class voltageToAngleConstants {
     }
     public void smallPulleyAngleAccumulator(double inputVoltage, int module) {
         // TODO: needs checking code for sm in the beginning from new files
-        sm[module] = voltsToAngle(inputVoltage, module);
-
         double difference = sm[module] - lastSm[module];
-//        sm[module] += voltsToAngle(inputVoltage, module) - lastAngle[module];
-        // checks if that accumulation made it go over or under
-        if (Math.abs(difference) > 180 && sm[module] > lastSm[module]) { // going from 0 to 360 --> going down
+        double threshold = 5.0; // Adjust threshold based on testing
+
+// Going from 0 to 360 (wrap-around)
+        if (Math.abs(difference) > 180 && sm[module] > lastSm[module] + threshold) {
             rotations[module]--;
-        } else if (Math.abs(difference) > 180 && sm[module] < lastSm[module]) { // going from 360 to 0 --> up
+        }
+// Going from 360 to 0 (wrap-around)
+        else if (Math.abs(difference) > 180 && sm[module] < lastSm[module] - threshold) {
             rotations[module]++;
         }
-        // somehow, this functions on fl and fr every time it's run
-
         lastSm[module] = sm[module];
+
 
         // this updates the small pulley things
     }
