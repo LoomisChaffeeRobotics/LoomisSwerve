@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.swerve;
 
+import static org.slf4j.MDC.put;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -16,9 +18,11 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Spliterator;
 
 public class voltageToAngleConstants {
     // (Angle, Voltage)
@@ -48,14 +52,15 @@ public class voltageToAngleConstants {
     String[] valuesReading = null; // used for reading at the beginning of opmodes
     String lastLineValue = null;
     String fileDataRaw;
-    String[] fileDataLines;
-    int linesI = 0;
     OpMode opMode; // for telemetry when done reading
     public voltageToAngleConstants(OpMode opMode, HardwareMap hw, String[] encoderNames) {
         this.opMode = opMode;
-        for (int i = 0; i < encoderNames.length; i++) {
-            encoders.add(hw.get(AnalogInput.class, encoderNames[i]));
+
+        for (String encoderName : encoderNames) {
+            encoders.add(hw.get(AnalogInput.class, encoderName));
         }
+
+
         voltages = new double[encoderNames.length];
         lastSm = new double[encoderNames.length];
 //        lastVoltage = new double[encoderNames.length];
@@ -65,15 +70,13 @@ public class voltageToAngleConstants {
         smallRotString = new String[encoderNames.length];
 
         fileDataRaw = ReadWriteFile.readFile(dataLog);
-        fileDataLines = fileDataRaw.split(System.lineSeparator());
     }
 
     public void init_loop() {
         // Supposed to check for the last value in the csv file for most recent rotations
         // TODO: check this very much
         // Also, what if we just rewrote over and over on the same line? how?
-        linesI = fileDataLines.length;
-        lastLineValue = fileDataLines[linesI-1];
+        lastLineValue = fileDataRaw;
         lastLineValue = lastLineValue.replace("[", "");
         lastLineValue = lastLineValue.replace("]", "");
         valuesReading = lastLineValue.split(", ");
@@ -112,7 +115,7 @@ public class voltageToAngleConstants {
 //            opMode.telemetry.update();
 //        }
     }
-    Map<Double,Double> bl = new HashMap<Double, Double>() {{ // Voltage up, degrees down
+    Map<Double,Double> bl = new LinkedHashMap<Double, Double>() {{ // Voltage up, degrees down
         put(0.0, 114.0);
         put(0.228, 90.0);
         put(0.777, 45.0);
@@ -125,7 +128,7 @@ public class voltageToAngleConstants {
         put(3.147, 135.0);
         put(3.307, 114.0);
     }};
-    Map<Double,Double> fr = new HashMap<Double, Double>() {{ // Voltage up, degrees up
+    Map<Double,Double> fr = new LinkedHashMap<Double, Double>() {{ // Voltage up, degrees up
         put(0.0, 342.0);
         put(0.134, 360.0); //synthetic
         put(0.135, 0.0);
@@ -138,7 +141,7 @@ public class voltageToAngleConstants {
         put(3.056, 315.0);
         put(3.307, 342.0);
     }};
-    Map<Double,Double> fl = new HashMap<Double, Double>() {{ // Voltage up, degrees down.
+    Map<Double,Double> fl = new LinkedHashMap<Double, Double>() {{ // Voltage up, degrees down.
         put(0.0, 199.0);
         put(0.166, 180.0);
         put(0.573, 135.0);
@@ -151,7 +154,7 @@ public class voltageToAngleConstants {
         put(3.000, 225.0);
         put(3.307, 199.0);
     }};
-    Map<Double,Double> br = new HashMap<Double, Double>() {{
+    Map<Double,Double> br = new LinkedHashMap<Double, Double>() {{
         put(0.0, 55.0);
         put(0.073, 45.0);
         put(0.482, 0.0);
@@ -222,24 +225,25 @@ public class voltageToAngleConstants {
         // both of the below are doubles but it won't let me
         Object[] values = valueSet.toArray();
         Object[] keys = keySet.toArray();
-        if (targetTable.containsKey(voltage)) {
+//        Spliterator<Double> sldkfj;
+        if (keySet.contains(voltage)) {
             return targetTable.get(voltage);
         } else {
-            for (int i = 0; i < keySet.size(); i++) {
+            for (int i = 0; i < keys.length - 1; i++) {
                 if (voltage < Double.parseDouble(keys[i].toString()) ) {
-                    // TODO: This if statement breaks! It sometimes never runs bc index changed. If I change it back it crashes.
 
                     double y1, x1, y2, x2, m;
-                    x2 = Double.parseDouble(keys[i].toString());
-                    x1 = Double.parseDouble(keys[i-1].toString());
-                    y1 = Double.parseDouble(values[i-1].toString());
-                    y2 = Double.parseDouble(values[i].toString());
-                    m = (y2 - y1) / (x2 - x1);
+                    x2 = Double.parseDouble(keys[i+1].toString());
+                    x1 = Double.parseDouble(keys[i].toString());
+                    y1 = Double.parseDouble(values[i].toString());
+                    y2 = Double.parseDouble(values[i+1].toString());
+                    m = (y2 - y1)/(x2 - x1);
                     // point slope of the line b/w the points its between
                     out = (m * (voltage - x1)) + y1;
                     // input x as the voltage into the formula
 
                     return out;
+                    // somehow, this is between 200 and 520 instead of 0 and 360????
                 }
             }
         }
@@ -257,6 +261,7 @@ public class voltageToAngleConstants {
         } else if (Math.abs(difference) > 180 && sm[module] < lastSm[module]) { // going from 360 to 0 --> up
             rotations[module]++;
         }
+        // somehow, this functions on fl and fr every time it's run
 
         lastSm[module] = sm[module];
 

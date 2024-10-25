@@ -8,9 +8,6 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.robotcore.external.NonConst;
 
 public class gamepadToVectors {
-
-    public static Gamepad fl;
-
     public double maxTranslationSpeed = 3.0;
     public double maxRotationSpeed = 0.5;
     public static double ROBOT_LENGTH = 1.0;  // Length
