@@ -251,6 +251,8 @@ public class voltageToAngleConstants {
     }
     public void smallPulleyAngleAccumulator(double inputVoltage, int module) {
         // TODO: needs checking code for sm in the beginning from new files
+        sm[module] = voltsToAngle(inputVoltage, module);
+
         double difference = sm[module] - lastSm[module];
         double threshold = 5.0; // Adjust threshold based on testing
 
