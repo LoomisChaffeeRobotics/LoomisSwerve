@@ -70,5 +70,11 @@ public class vectorsToAngleAndDrive {
         }
 
         // here be PIDs
+        // control motors, setpower
+        double angleOutput = anglePID[i].calculate(currentAngle);
+        double speedOutput = drivePID[i].calculate(0);
+        angleMotors[i].setPower(angleOutput);
+        driveMotors[i].setPower(speedOutput);
+
     }
 }
