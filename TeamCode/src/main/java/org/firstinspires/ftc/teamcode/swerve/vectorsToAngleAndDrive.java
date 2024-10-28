@@ -26,6 +26,7 @@ public class vectorsToAngleAndDrive {
     OptimalAngleCalculator angleFixer;
     DcMotor dFL, dFR, dBL, dBR;
     CRServo aFL, aFR, aBL, aBR;
+    double[] angles;
     ArrayList<Pair<Double,Double>> targetADPairList = new ArrayList<>(4); // key = mag, value = direction
     public vectorsToAngleAndDrive(OpMode opmode, Gamepad GP, HardwareMap hw, String[] encoderNames, String[] driveNames, String[] angleNames, double angleP, double angleI, double angleD, double driveP, double driveI, double driveD) {
         gamepad = GP;
@@ -54,14 +55,16 @@ public class vectorsToAngleAndDrive {
         double[] componentsVector = vectorGetter.getCombinedVector(gamepad.left_stick_x, gamepad.left_stick_y, gamepad.right_stick_x, gamepadToVectors.Wheel.values()[m]);
         double magnitude = Math.sqrt(Math.pow(componentsVector[0], 2) + Math.pow(componentsVector[1], 2));
         double direction = Math.atan(componentsVector[1]/componentsVector[0]);
-
+        angleFixer.calculateOptimalAngle(currentAngle, direction);
+        direction = angleFixer.getTargetAngle();
         Pair<Double, Double> pair = new Pair<>(magnitude, direction);
         targetADPairList.set(m, pair);
     }
 
     public void loop() {
+        angles = angleGetter.getBigPulleyAngles();
         for (int i = 0; i < targetADPairList.size(); i++) {
-            updateMagnitudeDirectionPair(i);
+            updateMagnitudeDirectionPair(angles[i], i);
             anglePID[i].setSetPoint(targetADPairList.get(i).second);
             drivePID[i].setSetPoint(targetADPairList.get(i).first);
         }
