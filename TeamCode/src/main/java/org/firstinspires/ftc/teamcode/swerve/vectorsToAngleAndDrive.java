@@ -5,6 +5,8 @@ import android.util.Pair;
 
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -22,7 +24,8 @@ public class vectorsToAngleAndDrive {
     PIDController[] drivePID;
     String[] driveNames, angleNames;
     OptimalAngleCalculator angleFixer;
-
+    DcMotor dFL, dFR, dBL, dBR;
+    CRServo aFL, aFR, aBL, aBR;
     ArrayList<Pair<Double,Double>> targetADPairList = new ArrayList<>(4); // key = mag, value = direction
     public vectorsToAngleAndDrive(OpMode opmode, Gamepad GP, HardwareMap hw, String[] encoderNames, String[] driveNames, String[] angleNames, double angleP, double angleI, double angleD, double driveP, double driveI, double driveD) {
         gamepad = GP;
@@ -37,6 +40,14 @@ public class vectorsToAngleAndDrive {
         angleGetter = new voltageToAngleConstants(opmode, hw, encoderNames);
         vectorGetter = new gamepadToVectors();
         angleFixer = new OptimalAngleCalculator();
+        dFL = hw.get(DcMotor.class, driveNames[0]);
+        dFR = hw.get(DcMotor.class, driveNames[1]);
+        dBL = hw.get(DcMotor.class, driveNames[2]);
+        dBR = hw.get(DcMotor.class, driveNames[3]);
+        aFL = hw.get(CRServo.class, angleNames[0]);
+        aFR = hw.get(CRServo.class, angleNames[1]);
+        aBL = hw.get(CRServo.class, angleNames[2]);
+        aBR = hw.get(CRServo.class, angleNames[3]);
         // init the other devices
     }
     public void updateMagnitudeDirectionPair (double currentAngle, int m) {
@@ -47,7 +58,6 @@ public class vectorsToAngleAndDrive {
         Pair<Double, Double> pair = new Pair<>(magnitude, direction);
         targetADPairList.set(m, pair);
     }
-
 
     public void loop() {
         for (int i = 0; i < targetADPairList.size(); i++) {
