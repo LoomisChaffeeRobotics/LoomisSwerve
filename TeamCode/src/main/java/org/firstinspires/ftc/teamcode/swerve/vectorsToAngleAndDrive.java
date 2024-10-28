@@ -3,34 +3,59 @@ package org.firstinspires.ftc.teamcode.swerve;
 
 import android.util.Pair;
 
+import com.arcrobotics.ftclib.controller.PIDController;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+
 import java.util.ArrayList;
 
 
 public class vectorsToAngleAndDrive {
+    Gamepad gamepad;
     private double aP, aI, aD, dP, dI, dD;
-
+    voltageToAngleConstants angleGetter;
     int reversed = 0;
     double[] originalVector;
-    OptimalAngleCalculator angleGetter;
-    ArrayList<Pair<Double,Double>> pairList = new ArrayList<>(4); // key = mag, value = direction
-    public vectorsToAngleAndDrive(double angleP, double angleI, double angleD, double driveP, double driveI, double driveD) {
+    gamepadToVectors vectorGetter;
+    PIDController[] anglePID;
+    PIDController[] drivePID;
+    String[] driveNames, angleNames;
+    OptimalAngleCalculator angleFixer;
+
+    ArrayList<Pair<Double,Double>> targetADPairList = new ArrayList<>(4); // key = mag, value = direction
+    public vectorsToAngleAndDrive(OpMode opmode, Gamepad GP, HardwareMap hw, String[] encoderNames, String[] driveNames, String[] angleNames, double angleP, double angleI, double angleD, double driveP, double driveI, double driveD) {
+        gamepad = GP;
         aP = angleP; //I don't know what I'm doing - owner of the code
         aI = angleI;
         aD = angleD;
         dP = driveP;
         dI = driveI;
         dD = driveD;
-        print("Julius is the smartest man alive");
+        anglePID = new PIDController[]{new PIDController(aP, aI, aD)};
+        drivePID = new PIDController[]{new PIDController(dP, dI, dD)};
+        angleGetter = new voltageToAngleConstants(opmode, hw, encoderNames);
+        vectorGetter = new gamepadToVectors();
+        angleFixer = new OptimalAngleCalculator();
+        // init the other devices
     }
-    public void updateMagnitudeDirectionPair (double[] targetComponentsVector, int m) {
-        double magnitude = Math.sqrt(Math.pow(targetComponentsVector[0], 2) + Math.pow(targetComponentsVector[1], 2));
-        double direction = Math.atan(targetComponentsVector[1]/targetComponentsVector[0]);
+    public void updateMagnitudeDirectionPair (double currentAngle, int m) {
+        double[] componentsVector = vectorGetter.getCombinedVector(gamepad.left_stick_x, gamepad.left_stick_y, gamepad.right_stick_x, gamepadToVectors.Wheel.values()[m]);
+        double magnitude = Math.sqrt(Math.pow(componentsVector[0], 2) + Math.pow(componentsVector[1], 2));
+        double direction = Math.atan(componentsVector[1]/componentsVector[0]);
+
         Pair<Double, Double> pair = new Pair<>(magnitude, direction);
-        pairList.set(m, pair);
+        targetADPairList.set(m, pair);
     }
 
 
     public void loop() {
+        for (int i = 0; i < targetADPairList.size(); i++) {
+            updateMagnitudeDirectionPair(i);
+            anglePID[i].setSetPoint(targetADPairList.get(i).second);
+            drivePID[i].setSetPoint(targetADPairList.get(i).first);
+        }
+
         // here be PIDs
     }
 }

@@ -72,6 +72,7 @@ public class voltageToAngleConstants {
         fileDataRaw = ReadWriteFile.readFile(dataLog);
     }
 
+
     public void init_loop() {
         // Supposed to check for the last value in the csv file for most recent rotations
         // TODO: check this very much
