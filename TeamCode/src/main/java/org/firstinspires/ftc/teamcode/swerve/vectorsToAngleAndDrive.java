@@ -43,8 +43,8 @@ public class vectorsToAngleAndDrive {
         dP = driveP;
         dI = driveI;
         dD = driveD;
-        anglePID = new PIDController[]{new PIDController(aP, aI, aD)};
-        drivePID = new PIDController[]{new PIDController(dP, dI, dD)};
+        anglePID = new PIDController[]{new PIDController(aP, aI, aD), new PIDController(aP, aI, aD), new PIDController(aP, aI, aD), new PIDController(aP, aI, aD)};
+        drivePID = new PIDController[]{new PIDController(dP, dI, dD), new PIDController(dP, dI, dD), new PIDController(dP, dI, dD), new PIDController(dP, dI, dD)};
         angleGetter = new voltageToAngleConstants(opmode, hw, encoderNames);
         vectorGetter = new gamepadToVectors();
         angleFixer = new OptimalAngleCalculator();
@@ -64,6 +64,12 @@ public class vectorsToAngleAndDrive {
         for (int i = 0; i < driveMotors.length; i++) {
             lastDriveEncoders[i] = driveMotors[i].getCurrentPosition();
         }
+        targetADPairList.ensureCapacity(4);
+        targetADPairList.add(new Pair<>(0.0, 0.0));
+        targetADPairList.add(new Pair<>(0.0, 0.0));
+        targetADPairList.add(new Pair<>(0.0, 0.0));
+        targetADPairList.add(new Pair<>(0.0, 0.0));
+
         // init the other devices
     }
     public void init_loop () {
@@ -88,37 +94,46 @@ public class vectorsToAngleAndDrive {
     public void loop() {
         angles = angleGetter.getBigPulleyAngles();
         angleGetter.loop();
-        // based on voltage get the angles
+        OM.telemetry.addData("Angles", angles.length);
+        OM.telemetry.addData("Angle PId", anglePID.length);
+        OM.telemetry.addData("Drive PId", drivePID.length);
+        OM.telemetry.update();
+
         for (int i = 0; i < angles.length; i++) {
             updateMagnitudeDirectionPair(angles[i], i);
             // refresh target numbers based on current pose
             int tickChange = driveMotors[i].getCurrentPosition() - lastDriveEncoders[i];
             double currentVelocity = getVelocity(tickChange, motorTimer.seconds());
             // calculate current velocity
-            anglePID[i].setSetPoint(targetADPairList.get(i).second);
+            anglePID[i].setSetPoint(targetADPairList.get(i).second); // TODO: This is NaN for some reason?
             drivePID[i].setSetPoint(targetADPairList.get(i).first);
             // set PID target to be the ones calculated earlier
 
 
         // here be PIDs
         // control motors, setpower
-            double angleOutput = anglePID[i].calculate(angles[i]);
+            double angleOutput = anglePID[i].calculate(angles[i]); // TODO: This returns NaN but input is not the problem
             double speedOutput = drivePID[i].calculate(currentVelocity);
-            // this is returning 0 for some reason
-            // set PID current to current things
-            angleMotors[i].setPower(angleOutput);
-            driveMotors[i].setPower(speedOutput);
+//            // this is returning 0 for some reason
+//            // set PID current to current things
+//            angleMotors[i].setPower(angleOutput);
+//            driveMotors[i].setPower(speedOutput);
 
             lastDriveEncoders[i] = driveMotors[i].getCurrentPosition();
             motorTimer.reset();
+            OM.telemetry.addData("outputs", angleOutput + ", " + speedOutput);
+            OM.telemetry.addData("input", angles[i]);
+            OM.telemetry.addData("setpoint", targetADPairList.get(i).second);
+            OM.telemetry.addData("magnitude", targetADPairList.get(i).first);
+            OM.telemetry.update();
 
-            anglePowers[i] = angleOutput;
-            drivePowers[i] = speedOutput;
+//            anglePowers[i] = angleOutput;
+//            drivePowers[i] = speedOutput;
             // reset the last position and time for velocity calcs
         }
 
     }
     public String getTelemetry() {
-        return Arrays.toString(anglePowers) + Arrays.toString(drivePowers) + anglePID[2].getSetPoint();
+        return Arrays.toString(anglePowers) + Arrays.toString(drivePowers);
     }
 }
