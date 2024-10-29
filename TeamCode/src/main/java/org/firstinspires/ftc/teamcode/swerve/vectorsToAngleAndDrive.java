@@ -106,6 +106,11 @@ public class vectorsToAngleAndDrive {
             double currentVelocity = getVelocity(tickChange, motorTimer.seconds());
             // calculate current velocity
             anglePID[i].setSetPoint(targetADPairList.get(i).second); // TODO: This is NaN for some reason?
+            if (Double.isNaN(angles[i]) || Double.isInfinite(angles[i])) {
+                OM.telemetry.addData("Warning", "Invalid angle value at index " + i);
+                continue; // Skip this iteration if angle is invalid
+            }
+
             drivePID[i].setSetPoint(targetADPairList.get(i).first);
             // set PID target to be the ones calculated earlier
 
