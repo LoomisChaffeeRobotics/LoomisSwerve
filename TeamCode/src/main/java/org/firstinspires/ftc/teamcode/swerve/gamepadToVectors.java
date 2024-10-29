@@ -10,8 +10,8 @@ import org.firstinspires.ftc.robotcore.external.NonConst;
 public class gamepadToVectors {
     public double maxTranslationSpeed = 3.0;
     public double maxRotationSpeed = 0.5;
-    public static double ROBOT_LENGTH = 1.0;  // Length
-    public static double ROBOT_WIDTH = 1.0;   // Width
+    public double ROBOT_LENGTH = 1.0;  // Length
+    public double ROBOT_WIDTH = 1.0;   // Width
 
 
     public double[] limitVector(double[] vector, double maxSpeed) {

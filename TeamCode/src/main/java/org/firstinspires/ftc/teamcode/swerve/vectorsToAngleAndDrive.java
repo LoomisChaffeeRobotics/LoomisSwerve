@@ -16,16 +16,13 @@ import java.util.ArrayList;
 
 
 public class vectorsToAngleAndDrive {
-    Gamepad gamepad;
+    Gamepad gamepad; // perhaps a set power method would be better here?
     private static double aP, aI, aD, dP, dI, dD;
     public static double inPerTick = (7.421/2)/537.7;
     voltageToAngleConstants angleGetter;
-    int reversed = 0;
-    double[] originalVector;
     gamepadToVectors vectorGetter;
     PIDController[] anglePID;
     PIDController[] drivePID;
-    String[] driveNames, angleNames;
     DcMotor[] driveMotors;
     CRServo[] angleMotors;
     int[] lastDriveEncoders;
@@ -33,7 +30,7 @@ public class vectorsToAngleAndDrive {
     OptimalAngleCalculator angleFixer;
     double[] angles;
     ArrayList<Pair<Double,Double>> targetADPairList = new ArrayList<>(4); // key = mag, value = direction
-    public vectorsToAngleAndDrive(OpMode opmode, Gamepad GP, HardwareMap hw, String[] encoderNames, String[] driveNames, String[] angleNames, double angleP, double angleI, double angleD, double driveP, double driveI, double driveD) {
+    public vectorsToAngleAndDrive(double length, double width, double maxRot, double maxTrans, OpMode opmode, Gamepad GP, HardwareMap hw, String[] encoderNames, String[] driveNames, String[] angleNames, double angleP, double angleI, double angleD, double driveP, double driveI, double driveD) {
         gamepad = GP;
         aP = angleP; //I don't know what I'm doing - owner of the code
         aI = angleI;
@@ -46,6 +43,10 @@ public class vectorsToAngleAndDrive {
         angleGetter = new voltageToAngleConstants(opmode, hw, encoderNames);
         vectorGetter = new gamepadToVectors();
         angleFixer = new OptimalAngleCalculator();
+        vectorGetter.maxRotationSpeed = maxRot;
+        vectorGetter.maxTranslationSpeed = maxTrans;
+        vectorGetter.ROBOT_LENGTH = length;
+        vectorGetter.ROBOT_WIDTH = width;
         driveMotors[0] = hw.get(DcMotor.class, driveNames[0]);
         driveMotors[1] = hw.get(DcMotor.class, driveNames[1]);
         driveMotors[2] = hw.get(DcMotor.class, driveNames[2]);
@@ -60,12 +61,18 @@ public class vectorsToAngleAndDrive {
         }
         // init the other devices
     }
+    public void init_loop () {
+        angleGetter.init_loop();
+    }
     public void updateMagnitudeDirectionPair (double currentAngle, int m) {
         double[] componentsVector = vectorGetter.getCombinedVector(gamepad.left_stick_x, gamepad.left_stick_y, gamepad.right_stick_x, gamepadToVectors.Wheel.values()[m]);
         double magnitude = Math.sqrt(Math.pow(componentsVector[0], 2) + Math.pow(componentsVector[1], 2));
         double direction = Math.atan(componentsVector[1]/componentsVector[0]);
         angleFixer.calculateOptimalAngle(currentAngle, direction);
         direction = angleFixer.getTargetAngle();
+        if (angleFixer.requiresReversing()) {
+            magnitude = -magnitude;
+        }
         Pair<Double, Double> pair = new Pair<>(magnitude, direction);
         targetADPairList.set(m, pair);
     }
