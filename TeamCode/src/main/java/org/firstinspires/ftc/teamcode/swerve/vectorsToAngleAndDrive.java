@@ -13,9 +13,11 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 
 public class vectorsToAngleAndDrive {
+    OpMode OM;
     Gamepad gamepad; // perhaps a set power method would be better here?
     private static double aP, aI, aD, dP, dI, dD;
     public static double inPerTick = (7.421/2)/537.7;
@@ -23,14 +25,17 @@ public class vectorsToAngleAndDrive {
     gamepadToVectors vectorGetter;
     PIDController[] anglePID;
     PIDController[] drivePID;
-    DcMotor[] driveMotors;
-    CRServo[] angleMotors;
-    int[] lastDriveEncoders;
+    double[] anglePowers = new double[4];
+    double[] drivePowers = new double[4];
+    DcMotor[] driveMotors = new DcMotor[4];
+    CRServo[] angleMotors = new CRServo[4];
+    int[] lastDriveEncoders = new int[4];
     ElapsedTime motorTimer;
     OptimalAngleCalculator angleFixer;
-    double[] angles;
+    double[] angles = new double[4];
     ArrayList<Pair<Double,Double>> targetADPairList = new ArrayList<>(4); // key = mag, value = direction
     public vectorsToAngleAndDrive(double length, double width, double maxRot, double maxTrans, OpMode opmode, Gamepad GP, HardwareMap hw, String[] encoderNames, String[] driveNames, String[] angleNames, double angleP, double angleI, double angleD, double driveP, double driveI, double driveD) {
+        OM = opmode;
         gamepad = GP;
         aP = angleP; //I don't know what I'm doing - owner of the code
         aI = angleI;
@@ -84,7 +89,7 @@ public class vectorsToAngleAndDrive {
         angles = angleGetter.getBigPulleyAngles();
         angleGetter.loop();
         // based on voltage get the angles
-        for (int i = 0; i < targetADPairList.size(); i++) {
+        for (int i = 0; i < angles.length; i++) {
             updateMagnitudeDirectionPair(angles[i], i);
             // refresh target numbers based on current pose
             int tickChange = driveMotors[i].getCurrentPosition() - lastDriveEncoders[i];
@@ -99,14 +104,21 @@ public class vectorsToAngleAndDrive {
         // control motors, setpower
             double angleOutput = anglePID[i].calculate(angles[i]);
             double speedOutput = drivePID[i].calculate(currentVelocity);
+            // this is returning 0 for some reason
             // set PID current to current things
             angleMotors[i].setPower(angleOutput);
             driveMotors[i].setPower(speedOutput);
 
             lastDriveEncoders[i] = driveMotors[i].getCurrentPosition();
             motorTimer.reset();
+
+            anglePowers[i] = angleOutput;
+            drivePowers[i] = speedOutput;
             // reset the last position and time for velocity calcs
         }
 
+    }
+    public String getTelemetry() {
+        return Arrays.toString(anglePowers) + Arrays.toString(drivePowers) + anglePID[2].getSetPoint();
     }
 }
