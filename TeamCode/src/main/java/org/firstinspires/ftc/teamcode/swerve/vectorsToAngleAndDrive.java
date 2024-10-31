@@ -75,17 +75,37 @@ public class vectorsToAngleAndDrive {
     public void init_loop () {
         angleGetter.init_loop();
     }
-    public void updateMagnitudeDirectionPair (double currentAngle, int m) {
-        double[] componentsVector = vectorGetter.getCombinedVector(gamepad.left_stick_x, gamepad.left_stick_y, gamepad.right_stick_x, gamepadToVectors.Wheel.values()[m]);
+    public void updateMagnitudeDirectionPair(double currentAngle, int m) {
+        // Get the combined vector from gamepad inputs
+        double[] componentsVector = vectorGetter.getCombinedVector(
+                gamepad.left_stick_x,
+                gamepad.left_stick_y,
+                gamepad.right_stick_x,
+                gamepadToVectors.Wheel.values()[m]
+        );
+
+        // Calculate magnitude and direction
         double magnitude = Math.sqrt(Math.pow(componentsVector[0], 2) + Math.pow(componentsVector[1], 2));
-        double direction = Math.toDegrees(Math.atan(componentsVector[1]/(componentsVector[0]+0.000000000001)));
+
+        // Check if there is minimal or no input from the gamepad
+        if (Math.abs(magnitude) < 0.01) { // Threshold for zero input (adjust if necessary)
+            // Retain the previous Pair if there is minimal input
+            return;
+        }
+
+        double direction = Math.toDegrees(Math.atan2(componentsVector[1], componentsVector[0]));
         direction = angleFixer.calculateOptimalAngle(currentAngle, direction);
+
+        // Adjust the magnitude if a direction reversal is needed
         if (angleFixer.requiresReversing()) {
             magnitude = -magnitude;
         }
+
+        // Update the targetADPairList with the new Pair values
         Pair<Double, Double> pair = new Pair<>(magnitude, direction);
         targetADPairList.set(m, pair);
     }
+
     public double getVelocity(int tickChange, double timeChange) {
         double ticksPerSecond = tickChange/timeChange;
         return inPerTick * ticksPerSecond;
