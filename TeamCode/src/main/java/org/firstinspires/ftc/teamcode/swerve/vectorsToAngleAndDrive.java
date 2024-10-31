@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.swerve;
 
 
-import android.text.style.EasyEditSpan;
 import android.util.Pair;
 
 import com.arcrobotics.ftclib.controller.PIDController;
@@ -12,8 +11,9 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 
 
 public class vectorsToAngleAndDrive {
@@ -78,9 +78,8 @@ public class vectorsToAngleAndDrive {
     public void updateMagnitudeDirectionPair (double currentAngle, int m) {
         double[] componentsVector = vectorGetter.getCombinedVector(gamepad.left_stick_x, gamepad.left_stick_y, gamepad.right_stick_x, gamepadToVectors.Wheel.values()[m]);
         double magnitude = Math.sqrt(Math.pow(componentsVector[0], 2) + Math.pow(componentsVector[1], 2));
-        double direction = Math.atan(componentsVector[1]/componentsVector[0]);
-        angleFixer.calculateOptimalAngle(currentAngle, direction);
-        direction = angleFixer.getTargetAngle();
+        double direction = Math.toDegrees(Math.atan(componentsVector[1]/(componentsVector[0]+0.000000000001)));
+        direction = angleFixer.calculateOptimalAngle(currentAngle, direction);
         if (angleFixer.requiresReversing()) {
             magnitude = -magnitude;
         }
@@ -94,10 +93,10 @@ public class vectorsToAngleAndDrive {
     public void loop() {
         angles = angleGetter.getBigPulleyAngles();
         angleGetter.loop();
-        OM.telemetry.addData("Angles", angles.length);
-        OM.telemetry.addData("Angle PId", anglePID.length);
-        OM.telemetry.addData("Drive PId", drivePID.length);
-        OM.telemetry.update();
+//        OM.telemetry.addData("Angles", angles.length);
+//        OM.telemetry.addData("Angle PId", anglePID.length);
+//        OM.telemetry.addData("Drive PId", drivePID.length);
+//        OM.telemetry.update();
 
         for (int i = 0; i < angles.length; i++) {
             updateMagnitudeDirectionPair(angles[i], i);
@@ -106,10 +105,11 @@ public class vectorsToAngleAndDrive {
             double currentVelocity = getVelocity(tickChange, motorTimer.seconds());
             // calculate current velocity
             anglePID[i].setSetPoint(targetADPairList.get(i).second); // TODO: This is NaN for some reason?
-            if (Double.isNaN(angles[i]) || Double.isInfinite(angles[i])) {
-                OM.telemetry.addData("Warning", "Invalid angle value at index " + i);
-                continue; // Skip this iteration if angle is invalid
-            }
+
+//            if (Double.isNaN(targetADPairList.get(i).second) || Double.isInfinite(targetADPairList.get(i).second)) {
+//                OM.telemetry.addData("Warning", "Invalid angle value at index " + i);
+//                continue; // Skip this iteration if angle is invalid
+//            }
 
             drivePID[i].setSetPoint(targetADPairList.get(i).first);
             // set PID target to be the ones calculated earlier
@@ -121,24 +121,48 @@ public class vectorsToAngleAndDrive {
             double speedOutput = drivePID[i].calculate(currentVelocity);
 //            // this is returning 0 for some reason
 //            // set PID current to current things
-//            angleMotors[i].setPower(angleOutput);
-//            driveMotors[i].setPower(speedOutput);
+            angleMotors[i].setPower(-angleOutput);
+            driveMotors[i].setPower(speedOutput);
 
             lastDriveEncoders[i] = driveMotors[i].getCurrentPosition();
             motorTimer.reset();
-            OM.telemetry.addData("outputs", angleOutput + ", " + speedOutput);
-            OM.telemetry.addData("input", angles[i]);
-            OM.telemetry.addData("setpoint", targetADPairList.get(i).second);
-            OM.telemetry.addData("magnitude", targetADPairList.get(i).first);
-            OM.telemetry.update();
+//            OM.telemetry.addData("outputs", angleOutput + ", " + speedOutput);
+//            OM.telemetry.addData("input", angles[i]);
+//            OM.telemetry.addData("setpoint", targetADPairList.get(i).second);
+//            OM.telemetry.addData("magnitude", targetADPairList.get(i).first);
+//            OM.telemetry.update();
 
-//            anglePowers[i] = angleOutput;
-//            drivePowers[i] = speedOutput;
+            anglePowers[i] = angleOutput;
+            drivePowers[i] = speedOutput;
             // reset the last position and time for velocity calcs
         }
 
     }
-    public String getTelemetry() {
-        return Arrays.toString(anglePowers) + Arrays.toString(drivePowers);
+    public void setPID(double ap, double ai, double ad, double dp, double di, double dd) {
+        for (PIDController pid : anglePID) {
+            pid.setPID(ap, ai, ad);
+        }
+        for (PIDController pid : drivePID) {
+            pid.setPID(dp, di, dd);
+        }
+    }
+    public void getTelemetry(Telemetry t) {
+        t.addData("FLTargAng", targetADPairList.get(0).second);
+        t.addData("FRTargAng", targetADPairList.get(1).second);
+        t.addData("BLTargAng", targetADPairList.get(2).second);
+        t.addData("BRTargAng", targetADPairList.get(3).second);
+        t.addData("FLIn", angles[0]);
+        t.addData("FRIn", angles[1]);
+        t.addData("BLIn", angles[2]);
+        t.addData("BRIn", angles[3]);
+        t.addData("FLAng", anglePowers[0]);
+        t.addData("FRAng", anglePowers[1]);
+        t.addData("BLAng", anglePowers[2]);
+        t.addData("BRAng", anglePowers[3]);
+        t.addData("FLDrive", drivePowers[0]);
+        t.addData("FRDrive", drivePowers[1]);
+        t.addData("BLDrive", drivePowers[2]);
+        t.addData("BRDrive", drivePowers[3]);
+        t.update();
     }
 }

@@ -14,9 +14,9 @@ public class driveTest extends OpMode {
     public static double P = 3e-2;
     public static double I = 0;
     public static double D = 0.00075;
-    public static double dP = 0;
-    public static double dI = 0;
-    public static double dD = 0;
+    public static double dP = 1e-5;
+    public static double dI = 1e-5;
+    public static double dD = 1e-5;
     vectorsToAngleAndDrive SwerveDrive;
     Telemetry telemetry2;
     FtcDashboard dash;
@@ -55,8 +55,8 @@ public class driveTest extends OpMode {
     @Override
     public void loop() {
         SwerveDrive.loop();
-        telemetry2.addData("pw", SwerveDrive.getTelemetry());
-        telemetry.addData("Powers", SwerveDrive.getTelemetry());
+        SwerveDrive.setPID(P, I, D, dP, dI, dD);
+        SwerveDrive.getTelemetry(telemetry2);
         telemetry.update();
         telemetry2.update();
     }

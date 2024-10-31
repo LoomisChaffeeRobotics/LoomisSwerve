@@ -278,7 +278,7 @@ public class voltageToAngleConstants {
         // this updates the small pulley things
     }
     public void updateBigPulleyCalculator(int m) {
-        double degreesRaw = sm[m] + rotations[m]; 
+        double degreesRaw = (sm[m] + rotations[m]) % 360;
         angle[m] = degreesRaw * smallToBigPulley; // calculates the angle :D now put it in the optimal angle calculator
     }
 
