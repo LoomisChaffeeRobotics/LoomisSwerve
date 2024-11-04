@@ -228,10 +228,10 @@ public class voltageToAngleConstants {
         return 0;
     }
     public void smallPulleyAngleAccumulator(double inputVoltage, int module) {
+        // TODO: needs checking code for sm in the beginning from new files
         sm[module] = voltsToAngle(inputVoltage, module);
-        double difference = calculateAngleDifference(sm[module], lastSm[module]);
-
-        // Update rotations if a wraparound occurred
+        double difference = sm[module] - lastSm[module];
+        // these are never being active??
         if (Math.abs(difference) > 180) {
             if (sm[module] < lastSm[module]) {
                 rotations[module]--;
@@ -239,8 +239,10 @@ public class voltageToAngleConstants {
                 rotations[module]++;
             }
         }
-
         lastSm[module] = sm[module];
+
+
+        // this updates the small pulley things
     }
     public void updateBigPulleyCalculator(int m) {
         double degreesRaw = sm[m] + (rotations[m] * 360);
