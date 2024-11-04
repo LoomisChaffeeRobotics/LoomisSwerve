@@ -15,6 +15,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.internal.system.AppUtil;
 
 import java.io.File;
@@ -46,6 +47,7 @@ public class voltageToAngleConstants {
     double[] angle; // big pulley angle values
 //    double[] lastVoltage; // for checking for wraparounds, and which direction
 //    double[] lastAngle; // last big pulley angle values what is this for??
+    double x1class;
     String[] lastAngStringsWriting; // last angle, but as strings
     String[] smallAngString;
     String[] smallRotString;
@@ -86,6 +88,7 @@ public class voltageToAngleConstants {
         angle = Arrays.stream(Arrays.copyOfRange(valuesReading, 0, 4)).mapToDouble(Double::parseDouble).toArray();
         rotations = Arrays.stream(Arrays.copyOfRange(valuesReading, 4, 8)).mapToInt(Integer::parseInt).toArray();
         sm = Arrays.stream(Arrays.copyOfRange(valuesReading, 8, 12)).mapToDouble(Double::parseDouble).toArray();
+        lastSm = sm;
         opMode.telemetry.addLine("Done Reading");
         opMode.telemetry.addData("Big Angles", Arrays.toString(angle));
         opMode.telemetry.addData("Small rotations", Arrays.toString(rotations));
@@ -182,6 +185,14 @@ public class voltageToAngleConstants {
         add(2, bl);
         add(3, br);
     }}; // list of maps lol
+    public void getTelemetry(Telemetry t) {
+        t.addData("smBR", sm[3]);
+        t.addData("smRotBR", rotations[3]);
+        t.addData("angBR", angle[3]);
+        t.addData("smRaw", encoders.get(3).getVoltage());
+        t.addData("x1 class", x1class);
+        t.update();
+    }
     public void loop() {
 //        ArrayList<Object> writingFinal;
         /*      writing final looks like this
@@ -233,25 +244,25 @@ public class voltageToAngleConstants {
         // both of the below are doubles but it won't let me
         Object[] values = valueSet.toArray();
         Object[] keys = keySet.toArray();
-//        Spliterator<Double> sldkfj;
         if (keySet.contains(voltage)) {
             return targetTable.get(voltage);
         } else {
             for (int i = 0; i < keys.length - 1; i++) {
                 if (voltage < Double.parseDouble(keys[i].toString()) ) {
 
+
                     double y1, x1, y2, x2, m;
-                    x2 = Double.parseDouble(keys[i+1].toString());
-                    x1 = Double.parseDouble(keys[i].toString());
-                    y1 = Double.parseDouble(values[i].toString());
-                    y2 = Double.parseDouble(values[i+1].toString());
+                    x2 = Double.parseDouble(keys[i].toString());
+                    x1 = Double.parseDouble(keys[i-1].toString());
+                    y1 = Double.parseDouble(values[i-1].toString());
+                    y2 = Double.parseDouble(values[i].toString());
                     m = (y2 - y1)/(x2 - x1);
                     // point slope of the line b/w the points its between
                     out = (m * (voltage - x1)) + y1;
+                    x1class = x2;
                     // input x as the voltage into the formula
-
                     return out;
-                    // somehow, this is between 200 and 520 instead of 0 and 360????
+                    // TODO: somehow this is a little wonky
                 }
             }
         }
@@ -278,86 +289,9 @@ public class voltageToAngleConstants {
         // this updates the small pulley things
     }
     public void updateBigPulleyCalculator(int m) {
-        double degreesRaw = (sm[m] + rotations[m]) % 360;
-        angle[m] = degreesRaw * smallToBigPulley; // calculates the angle :D now put it in the optimal angle calculator
+        double degreesRaw = sm[m] + (rotations[m] * 360);
+        angle[m] = (degreesRaw * smallToBigPulley) % 360; // calculates the angle :D now put it in the optimal angle calculator
     }
-
-//    public void voltageToAngleConstants() {
-//        fl.put(74.0, 1.700);
-//        fl.put(65.0, 2.000);
-//        fl.put(40.0, 2.503);
-//        fl.put(17.0, 3.00);
-//        fl.put(0.0, 0.0);
-//        fl.put(-24.0, 0.500);
-//        fl.put(-27.5, 0.585);
-//        fl.put(-47.0, 1.000);
-//        fl.put(-74.0, 1.625);
-//
-//
-//        // Servo Mode: R 1.04, P 0.393, L 3.07
-//
-//        fr.put(0.0, 0.113);
-//        fr.put(45.0, 2.311);
-//        fr.put(-10.0, 0.286);
-//        fr.put(-20.0, 0.500);
-//        fr.put(-31.0, 0.741);
-//        fr.put(-52.0,1.2);
-//        fr.put(-79.0, 1.7);
-//        fr.put(-87.0, 1.976);
-//        fr.put(-90.0, 2.026);
-//
-//        bl.put(0.0, 0.0);
-//        bl.put(0.0, 0.0);
-//        bl.put(0.0, 0.0);
-//        bl.put(0.0, 0.0);
-//        bl.put(0.0, 0.0);
-//        bl.put(0.0, 0.0);
-//
-//        br.put(0.0, 0.0);
-//        br.put(0.0, 0.0);
-//        br.put(0.0, 0.0);
-//        br.put(0.0, 0.0);
-//        br.put(0.0, 0.0);
-//        br.put(0.0, 0.0);
-//
-//
-//    }
-
-//    public double angleFL(double voltage) {
-//        double raw = (voltage * -45) - 0.738431;
-//        if (raw < 0) {
-//            return raw;
-//        } else {
-//            return (voltage * -45) + 160.73;
-//        }
-//    }
-//
-//    public double angleFR(double voltage) {
-//        double raw = (voltage * -45) + 3.93225;
-//        if (raw < 3.93225) {
-//            return raw;
-//        } else {
-//            return (voltage * -45) + 148.995;
-//        }
-//
-//    }
-//
-//    public double angleBL(double voltage) {
-//        double raw = voltage * 0;
-//        if (raw < 0) {
-//            return raw;
-//        } else {
-//            return (voltage * -45);
-//        }
-//    }
-//    public double angleBR(double voltage) {
-//        double raw = voltage * 0;
-//        if (raw < 0) {
-//            return raw;
-//        } else {
-//            return (voltage * -45);
-//        }
-//    }
 
 
 }
