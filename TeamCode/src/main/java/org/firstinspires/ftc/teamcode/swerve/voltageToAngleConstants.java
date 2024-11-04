@@ -30,23 +30,14 @@ public class voltageToAngleConstants {
     /* TODO: Something is very wrong with filewriter it's not putting it on the control hub, it's putting it straight in this repository
      */
     double smallToBigPulley = 0.3947368; // small:big times 360 deg -- how much big revolves per rotation of small pulley
-//    double degreesPerVolt = 43.0100675418;
-//    double[] startingOffset;
     int[] rotations; // full small pulley rotations, added to how much degrees of current rotation
     ArrayList<AnalogInput> encoders = new ArrayList<>(); // list of objects, comes from user getting hardware map inputs
     String logFilePath = String.format("%s/FIRST/wheelAngles.txt", Environment.getExternalStorageDirectory().getAbsolutePath());
-//    FileWriter fileWriter = new FileWriter(logFilePath, false);
-//    CSVWriter csvWriter = new CSVWriter(fileWriter);
-//    FileReader fileReader = new FileReader(logFilePath);
-//    CSVReader csvReader = new CSVReader(fileReader);
-
     File dataLog = AppUtil.getInstance().getSettingsFile(logFilePath);
     double[] voltages; // these are from the analog inputs
     double[] sm; // small pulley angle values NO ROTATIONS
     double[] lastSm; //last small pulley angle for counting up/down rotations
     double[] angle; // big pulley angle values
-//    double[] lastVoltage; // for checking for wraparounds, and which direction
-//    double[] lastAngle; // last big pulley angle values what is this for??
     double x1class;
     String[] lastAngStringsWriting; // last angle, but as strings
     String[] smallAngString;
@@ -61,8 +52,6 @@ public class voltageToAngleConstants {
         for (String encoderName : encoderNames) {
             encoders.add(hw.get(AnalogInput.class, encoderName));
         }
-
-
         voltages = new double[encoderNames.length];
         lastSm = new double[encoderNames.length];
 //        lastVoltage = new double[encoderNames.length];
@@ -103,29 +92,7 @@ public class voltageToAngleConstants {
             // Set default values if necessary
         }
 
-//        try {
 //
-////            String[] line = csvReader.readNext(); // I want this to stop happening once the else
-////            if (line != null) {
-////                valuesReading = line;
-////            }
-//
-//
-//            // this is supposed to go line by line replacing valuesReading with new line content
-//            // when it ends, valueReading should be the last values of opMode
-//            // basically, can't move the wheels unpowered because bad
-//        } catch (IOException e) {
-//            // go through values reading to split off the three things and assign them appropriately
-//            angle = Arrays.stream(Arrays.copyOfRange(valuesReading,0,4)).mapToDouble(Double::parseDouble).toArray();
-//            lastAngle = angle;
-//            rotations = Arrays.stream(Arrays.copyOfRange(valuesReading,4,8)).mapToInt(Integer::parseInt).toArray();
-//            sm = Arrays.stream(Arrays.copyOfRange(valuesReading,8,12)).mapToDouble(Double::parseDouble).toArray();
-//            opMode.telemetry.addLine("Done Reading");
-//            opMode.telemetry.addData("Big Angles", angle);
-//            opMode.telemetry.addData("Small rotations", rotations);
-//            opMode.telemetry.addData("Small Angles", sm);
-//            opMode.telemetry.update();
-//        }
     }
     Map<Double,Double> bl = new LinkedHashMap<Double, Double>() {{ // Voltage up, degrees down
         put(0.0, 114.0);
@@ -189,8 +156,10 @@ public class voltageToAngleConstants {
         t.addData("smBR", sm[3]);
         t.addData("smRotBR", rotations[3]);
         t.addData("angBR", angle[3]);
-        t.addData("smRaw", encoders.get(3).getVoltage());
+        t.addData("smRaw", voltages[3]);
+        t.addData("lastSM", lastSm[3]);
         t.addData("x1 class", x1class);
+        t.addData("modules", modulesTable.size());
         t.update();
     }
     public void loop() {
@@ -200,32 +169,21 @@ public class voltageToAngleConstants {
        Small rotation       ...
        Small Angle          ...
         */
-//        List<Triplet<Double,Integer,Double>> tripletList = new ArrayList<>();
         String[] writingFinal;
         for (int m = 0; m < modulesTable.size(); m++) {
             voltages[m] = encoders.get(m).getVoltage();
             smallPulleyAngleAccumulator(voltages[m], m);
-//            lastAngle[m] = angle[m];
             updateBigPulleyCalculator(m);
             lastAngStringsWriting[m] = Double.toString(angle[m]);
             smallAngString[m] = Double.toString(sm[m]);
             smallRotString[m] = Integer.toString(rotations[m]);
-
-//            tripletList.add(new Triplet<>(lastAngle[m], rotations[m], sm[m]));
-
         }
         // go through for each module, get the newest voltage, update angle measurement, update last angles
 
 
         writingFinal = ArrayUtils.addAll(lastAngStringsWriting,smallRotString);
         writingFinal = ArrayUtils.addAll(writingFinal, smallAngString);
-
-//        for (int i = 0; i < tripletList.size(); i++) {
-//            writingFinal[i] = tripletList.get(i).toString();
-//            // turn each triplet into a string and add it to writing final
-//        }
         ReadWriteFile.writeFile(dataLog, Arrays.toString(writingFinal));
-//        tripletList.clear();
         Arrays.fill(writingFinal, null);
         opMode.telemetry.addData("Big Angles", Arrays.toString(angle));
         opMode.telemetry.addData("Small rotations", Arrays.toString(rotations));
@@ -247,7 +205,7 @@ public class voltageToAngleConstants {
         if (keySet.contains(voltage)) {
             return targetTable.get(voltage);
         } else {
-            for (int i = 0; i < keys.length - 1; i++) {
+            for (int i = 0; i < keys.length; i++) {
                 if (voltage < Double.parseDouble(keys[i].toString()) ) {
 
 
@@ -259,7 +217,8 @@ public class voltageToAngleConstants {
                     m = (y2 - y1)/(x2 - x1);
                     // point slope of the line b/w the points its between
                     out = (m * (voltage - x1)) + y1;
-                    x1class = x2;
+                    if (module == 3) {x1class = x2; }
+
                     // input x as the voltage into the formula
                     return out;
                     // TODO: somehow this is a little wonky
@@ -271,17 +230,14 @@ public class voltageToAngleConstants {
     public void smallPulleyAngleAccumulator(double inputVoltage, int module) {
         // TODO: needs checking code for sm in the beginning from new files
         sm[module] = voltsToAngle(inputVoltage, module);
-
         double difference = sm[module] - lastSm[module];
-        double threshold = 5.0; // Adjust threshold based on testing
-
-// Going from 0 to 360 (wrap-around)
-        if (Math.abs(difference) > 180 && sm[module] > lastSm[module] + threshold) {
-            rotations[module]--;
-        }
-// Going from 360 to 0 (wrap-around)
-        else if (Math.abs(difference) > 180 && sm[module] < lastSm[module] - threshold) {
-            rotations[module]++;
+        // these are never being active??
+        if (Math.abs(difference) > 180) {
+            if (sm[module] < lastSm[module]) {
+                rotations[module]--;
+            } else {
+                rotations[module]++;
+            }
         }
         lastSm[module] = sm[module];
 

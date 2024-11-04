@@ -25,11 +25,7 @@ public class OptimalAngleCalculator {
             // which is bigger than reachable
         } else if (270 > angleDifference) {
             requiresReversing = false;
-            if (normalizedVectorAngle < -90) {
-                return normalizeAngle(normalizedVectorAngle + 360);
-            } else {
-                return normalizeAngle(normalizedVectorAngle - 360);
-            }
+            return normalizeAngle(normalizedVectorAngle + 360);
         } else {
             requiresReversing = false;
             return normalizedVectorAngle;
