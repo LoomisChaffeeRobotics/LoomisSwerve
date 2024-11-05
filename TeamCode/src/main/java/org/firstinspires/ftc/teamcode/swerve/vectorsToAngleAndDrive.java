@@ -88,14 +88,12 @@ public class vectorsToAngleAndDrive {
         double magnitude = Math.sqrt(Math.pow(componentsVector[0], 2) + Math.pow(componentsVector[1], 2));
 
         // Check if there is minimal or no input from the gamepad
-        if (Math.abs(magnitude) < 0.05) { // Threshold for zero input (adjust if necessary)
-            // Retain the previous Pair if there is minimal input
-            return;
-        }
+
         // the problem is that the below line goes from -180 to 180, but the voltage lookups go from 0 to 360.
         // we tried adding 180 to it before and it didn't really solve it*, but might have missed some others
         // *possibly because -180 + 180 is NOT the same angle math-wise as 0, but code wise it is
         // so maybe it's not this that's the source of the problem? something larger or elsewhere?
+
         double direction = Math.toDegrees(Math.atan2(componentsVector[1], componentsVector[0]));
         if (direction < 0) {
             direction += 360;
@@ -106,6 +104,7 @@ public class vectorsToAngleAndDrive {
         if (angleFixer.requiresReversing()) {
             magnitude = -magnitude;
         }
+        magnitude *= Math.cos(currentAngle/direction);
 
         // Update the targetADPairList with the new Pair values
         Pair<Double, Double> pair = new Pair<>(magnitude, direction);

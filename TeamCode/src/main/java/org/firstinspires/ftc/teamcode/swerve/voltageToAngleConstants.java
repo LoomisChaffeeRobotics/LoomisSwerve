@@ -12,6 +12,7 @@ import android.os.Environment;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -38,6 +39,7 @@ public class voltageToAngleConstants {
     double[] sm; // small pulley angle values NO ROTATIONS
     double[] lastSm; //last small pulley angle for counting up/down rotations
     double[] angle; // big pulley angle values
+    double[] differenceMs;
     double x1class;
     String[] lastAngStringsWriting; // last angle, but as strings
     String[] smallAngString;
@@ -54,6 +56,7 @@ public class voltageToAngleConstants {
         }
         voltages = new double[encoderNames.length];
         lastSm = new double[encoderNames.length];
+        differenceMs = new double[encoderNames.length];
 //        lastVoltage = new double[encoderNames.length];
 
         lastAngStringsWriting = new String[encoderNames.length];
@@ -62,8 +65,6 @@ public class voltageToAngleConstants {
 
         fileDataRaw = ReadWriteFile.readFile(dataLog);
     }
-
-
     public void init_loop() {
         // Supposed to check for the last value in the csv file for most recent rotations
         // TODO: check this very much
@@ -72,12 +73,12 @@ public class voltageToAngleConstants {
         lastLineValue = lastLineValue.replace("[", "");
         lastLineValue = lastLineValue.replace("]", "");
         valuesReading = lastLineValue.split(", ");
-
         // breaks right here, "NumberFormatException: empty String"
         angle = Arrays.stream(Arrays.copyOfRange(valuesReading, 0, 4)).mapToDouble(Double::parseDouble).toArray();
         rotations = Arrays.stream(Arrays.copyOfRange(valuesReading, 4, 8)).mapToInt(Integer::parseInt).toArray();
         sm = Arrays.stream(Arrays.copyOfRange(valuesReading, 8, 12)).mapToDouble(Double::parseDouble).toArray();
-        lastSm = sm;
+        System.arraycopy(sm, 0, lastSm, 0, 4);
+
         opMode.telemetry.addLine("Done Reading");
         opMode.telemetry.addData("Big Angles", Arrays.toString(angle));
         opMode.telemetry.addData("Small rotations", Arrays.toString(rotations));
@@ -157,7 +158,7 @@ public class voltageToAngleConstants {
         t.addData("smRotBR", rotations[3]);
         t.addData("angBR", angle[3]);
         t.addData("smRaw", voltages[3]);
-        t.addData("lastSM", lastSm[3]);
+        t.addData("lastSM", differenceMs[3]);
         t.addData("x1 class", x1class);
         t.addData("modules", modulesTable.size());
         t.update();
@@ -188,6 +189,7 @@ public class voltageToAngleConstants {
         opMode.telemetry.addData("Big Angles", Arrays.toString(angle));
         opMode.telemetry.addData("Small rotations", Arrays.toString(rotations));
         opMode.telemetry.addData("Small Angles", Arrays.toString(sm));
+        System.arraycopy(sm, 0, lastSm, 0, 4);
         // write to the txt everything
         // everything being big pulley angle > small pulley full rotations > small pulley angle pose
     }
@@ -207,8 +209,6 @@ public class voltageToAngleConstants {
         } else {
             for (int i = 0; i < keys.length; i++) {
                 if (voltage < Double.parseDouble(keys[i].toString()) ) {
-
-
                     double y1, x1, y2, x2, m;
                     x2 = Double.parseDouble(keys[i].toString());
                     x1 = Double.parseDouble(keys[i-1].toString());
@@ -228,9 +228,9 @@ public class voltageToAngleConstants {
         return 0;
     }
     public void smallPulleyAngleAccumulator(double inputVoltage, int module) {
-        // TODO: needs checking code for sm in the beginning from new files
         sm[module] = voltsToAngle(inputVoltage, module);
         double difference = sm[module] - lastSm[module];
+        differenceMs[module] = difference;
         // these are never being active??
         if (Math.abs(difference) > 180) {
             if (sm[module] < lastSm[module]) {
@@ -239,9 +239,6 @@ public class voltageToAngleConstants {
                 rotations[module]++;
             }
         }
-        lastSm[module] = sm[module];
-
-
         // this updates the small pulley things
     }
     public void updateBigPulleyCalculator(int m) {

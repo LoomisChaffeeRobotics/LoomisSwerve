@@ -37,5 +37,11 @@ public class test extends OpMode {
     public void loop() {
         angles.loop();
         angles.getTelemetry(telemetry2);
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 }
