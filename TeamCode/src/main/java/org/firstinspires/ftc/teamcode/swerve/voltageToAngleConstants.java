@@ -30,7 +30,7 @@ public class voltageToAngleConstants {
     // (Angle, Voltage)
     /* TODO: Something is very wrong with filewriter it's not putting it on the control hub, it's putting it straight in this repository
      */
-    double smallToBigPulley = 0.3947368; // small:big times 360 deg -- how much big revolves per rotation of small pulley
+    double smallToBigPulley = 0.3947368; // small:big --> small deg to big deg
     int[] rotations; // full small pulley rotations, added to how much degrees of current rotation
     ArrayList<AnalogInput> encoders = new ArrayList<>(); // list of objects, comes from user getting hardware map inputs
     String logFilePath = String.format("%s/FIRST/wheelAngles.txt", Environment.getExternalStorageDirectory().getAbsolutePath());
@@ -41,6 +41,7 @@ public class voltageToAngleConstants {
     double[] angle; // big pulley angle values
     double[] differenceMs;
     double x1class;
+    double x1classR;
     String[] lastAngStringsWriting; // last angle, but as strings
     String[] smallAngString;
     String[] smallRotString;
@@ -134,7 +135,7 @@ public class voltageToAngleConstants {
         put(3.000, 225.0);
         put(3.307, 199.0);
     }};
-    Map<Double,Double> br = new LinkedHashMap<Double, Double>() {{
+    Map<Double,Double> br = new LinkedHashMap<Double, Double>() {{ // voltage up deg down (not side dependent)
         put(0.0, 55.0);
         put(0.073, 45.0);
         put(0.482, 0.0);
@@ -157,7 +158,19 @@ public class voltageToAngleConstants {
         t.addData("smBR", sm[3]);
         t.addData("smRotBR", rotations[3]);
         t.addData("angBR", angle[3]);
-        t.addData("smRaw", voltages[3]);
+        t.addData("angFL", angle[0]);
+        t.addData("angFR", angle[1]);
+        t.addData("angBL", angle[2]);
+        t.addData("smRotBl", rotations[2]);
+        t.addData("smRotFl", rotations[0]);
+        t.addData("smRotFR", rotations[1]);
+        t.addData("smBL", sm[2]);
+        t.addData("smFL", sm[0]);
+        t.addData("smFR", sm[1]);
+        t.addData("smRawFR", voltages[1]);
+        t.addData("smRawFL", voltages[0]);
+        t.addData("smRawBR", voltages[3]);
+        t.addData("smRawBL", voltages[2]);
         t.addData("lastSM", differenceMs[3]);
         t.addData("x1 class", x1class);
         t.addData("modules", modulesTable.size());
@@ -217,7 +230,12 @@ public class voltageToAngleConstants {
                     m = (y2 - y1)/(x2 - x1);
                     // point slope of the line b/w the points its between
                     out = (m * (voltage - x1)) + y1;
-                    if (module == 3) {x1class = x2; }
+                    if (module == 0) {
+                        x1class = x2;
+                    } else if (module == 1) {
+                        x1classR = x2;
+                    }
+
 
                     // input x as the voltage into the formula
                     return out;
@@ -233,17 +251,30 @@ public class voltageToAngleConstants {
         differenceMs[module] = difference;
         // these are never being active??
         if (Math.abs(difference) > 180) {
-            if (sm[module] < lastSm[module]) {
-                rotations[module]--;
-            } else {
-                rotations[module]++;
-            }
+//            if (module != 1) {
+                if (sm[module] < lastSm[module]) {
+                    rotations[module]++;
+                } else {
+                    rotations[module]--;
+                }
+//            } else {
+//                if (sm[module] < lastSm[module]) {
+//                    rotations[module]--;
+//                } else {
+//                    rotations[module]++;
+//                }
+//            }
         }
         // this updates the small pulley things
     }
     public void updateBigPulleyCalculator(int m) {
         double degreesRaw = sm[m] + (rotations[m] * 360);
-        angle[m] = (degreesRaw * smallToBigPulley) % 360; // calculates the angle :D now put it in the optimal angle calculator
+        double tempAng = (degreesRaw * smallToBigPulley) % 360;
+        if (tempAng < 0 ) {
+            tempAng += 360;
+        }
+        angle[m] = tempAng;
+
     }
 
 

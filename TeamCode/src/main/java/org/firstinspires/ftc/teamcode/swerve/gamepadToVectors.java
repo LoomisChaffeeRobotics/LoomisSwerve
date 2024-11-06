@@ -70,17 +70,17 @@ public class gamepadToVectors {
     public double getWheelAngle(Wheel wheel) {
         double angle = 0.0;
         switch (wheel) {
-            case fl:
-                angle = Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) - Math.PI / 2;
-                break;
             case bl:
+                angle = Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) + Math.PI / 2;
+                break;
+            case fl:
                 angle = Math.PI / 2 - Math.atan(ROBOT_WIDTH / ROBOT_LENGTH);
                 break;
-            case fr:
-                angle = (Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) )+ Math.PI / 2;
-                break;
             case br:
-                angle = (Math.PI / 2) + Math.atan(ROBOT_WIDTH / ROBOT_LENGTH);
+                angle = 3 * Math.PI/2 - (Math.atan(ROBOT_WIDTH / ROBOT_LENGTH));
+                break;
+            case fr:
+                angle =  Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) - Math.PI/2;
                 break;
         }
         return angle;

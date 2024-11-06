@@ -20,6 +20,8 @@ public class vectorsToAngleAndDrive {
     OpMode OM;
     Gamepad gamepad; // perhaps a set power method would be better here?
     private static double aP, aI, aD, dP, dI, dD;
+    boolean dontMove;
+    boolean reverse;
     public static double inPerTick = (7.421/2)/537.7;
     voltageToAngleConstants angleGetter;
     gamepadToVectors vectorGetter;
@@ -80,31 +82,34 @@ public class vectorsToAngleAndDrive {
         double[] componentsVector = vectorGetter.getCombinedVector(
                 gamepad.left_stick_x,
                 -gamepad.left_stick_y,
-                gamepad.right_stick_x,
+                -gamepad.right_stick_x,
                 gamepadToVectors.Wheel.values()[m]
         );
 
         // Calculate magnitude and direction
         double magnitude = Math.sqrt(Math.pow(componentsVector[0], 2) + Math.pow(componentsVector[1], 2));
 
-        // Check if there is minimal or no input from the gamepad
-
         // the problem is that the below line goes from -180 to 180, but the voltage lookups go from 0 to 360.
         // we tried adding 180 to it before and it didn't really solve it*, but might have missed some others
         // *possibly because -180 + 180 is NOT the same angle math-wise as 0, but code wise it is
         // so maybe it's not this that's the source of the problem? something larger or elsewhere?
-
-        double direction = Math.toDegrees(Math.atan2(componentsVector[1], componentsVector[0]));
-        if (direction < 0) {
-            direction += 360;
+        double direction;
+        if (magnitude > 0.1) {
+            direction = Math.toDegrees(Math.atan2(componentsVector[1], componentsVector[0]));
+            if (direction < 0) {
+                direction += 360;
+            }
+            direction = angleFixer.calculateOptimalAngle(currentAngle, direction); // perhaps this is where fixes needed?
+            dontMove = false;
+        } else {
+            dontMove = true;
+            return;
         }
-        direction = angleFixer.calculateOptimalAngle(currentAngle, direction); // perhaps this is where fixes needed?
 
         // Adjust the magnitude if a direction reversal is needed
         if (angleFixer.requiresReversing()) {
             magnitude = -magnitude;
         }
-        magnitude *= Math.cos(currentAngle/direction);
 
         // Update the targetADPairList with the new Pair values
         Pair<Double, Double> pair = new Pair<>(magnitude, direction);
@@ -128,23 +133,25 @@ public class vectorsToAngleAndDrive {
             // refresh target numbers based on current pose
             int tickChange = driveMotors[i].getCurrentPosition() - lastDriveEncoders[i];
             // calculate current velocity
-            anglePID[i].setSetPoint(targetADPairList.get(i).second);
-            drivePID[i].setSetPoint(targetADPairList.get(i).first);
+            if (!dontMove) {
+                anglePID[i].setSetPoint(targetADPairList.get(i).second);
+            } else {
+                anglePID[i].setSetPoint(angles[i]);
+            }
+//            drivePID[i].setSetPoint(targetADPairList.get(i).first);
             // set PID target to be the ones calculated earlier
             double speedOutput;
 
         // here be PIDs
         // control motors, setpower
             double angleOutput = anglePID[i].calculate(angles[i]); // TODO: This returns NaN but input is not the problem
-            if (Math.abs(angles[i] - targetADPairList.get(i).second) < 5) {
-                if (angleFixer.requiresReversing) {
-                    speedOutput = Math.sqrt(Math.pow(gamepad.left_stick_x, 2) + Math.pow(gamepad.left_stick_y, 2)) * -1;
-                } else {
-                    speedOutput = Math.sqrt(Math.pow(gamepad.left_stick_x, 2) + Math.pow(gamepad.left_stick_y, 2));
-                }
-            } else {
-                speedOutput = 0;
-            }
+//            if (Math.abs(angles[i] - targetADPairList.get(i).second) < 15) { // if within 15 deg of targ angle
+//            if (angleFixer.requiresReversing) {
+            speedOutput = targetADPairList.get(i).first;
+
+//            } else {
+//                speedOutput = 0;
+//            }
 
 
 //            // this is returning 0 for some reason
