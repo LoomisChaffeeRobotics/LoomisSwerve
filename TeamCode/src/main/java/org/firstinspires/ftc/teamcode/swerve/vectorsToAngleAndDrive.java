@@ -81,7 +81,7 @@ public class vectorsToAngleAndDrive {
         // Get the combined vector from gamepad inputs
         double[] componentsVector = vectorGetter.getCombinedVector(
                 gamepad.left_stick_x,
-                -gamepad.left_stick_y,
+                gamepad.left_stick_y,
                 -gamepad.right_stick_x,
                 gamepadToVectors.Wheel.values()[m]
         );
@@ -89,31 +89,31 @@ public class vectorsToAngleAndDrive {
         // Calculate magnitude and direction
         double magnitude = Math.sqrt(Math.pow(componentsVector[0], 2) + Math.pow(componentsVector[1], 2));
 
-        // the problem is that the below line goes from -180 to 180, but the voltage lookups go from 0 to 360.
-        // we tried adding 180 to it before and it didn't really solve it*, but might have missed some others
-        // *possibly because -180 + 180 is NOT the same angle math-wise as 0, but code wise it is
-        // so maybe it's not this that's the source of the problem? something larger or elsewhere?
         double direction;
-        if (magnitude > 0.1) {
-            direction = Math.toDegrees(Math.atan2(componentsVector[1], componentsVector[0]));
-            if (direction < 0) {
-                direction += 360;
-            }
-            direction = angleFixer.calculateOptimalAngle(currentAngle, direction); // perhaps this is where fixes needed?
+        if (Math.abs(magnitude) > 0.1) {
+            direction = Math.toDegrees(Math.atan2(componentsVector[0], componentsVector[1])) + 180;
+//            if (direction < 0) {
+//                direction += 180;
+//            }
+            direction = angleFixer.calculateOptimalAngle(currentAngle, direction, m); // perhaps this is where fixes needed?
             dontMove = false;
         } else {
+            Pair<Double, Double> pairNoMove = new Pair<>(0.0, targetADPairList.get(m).second);
+            targetADPairList.set(m, pairNoMove);
             dontMove = true;
             return;
         }
 
         // Adjust the magnitude if a direction reversal is needed
-        if (angleFixer.requiresReversing()) {
-            magnitude = -magnitude;
+        if (angleFixer.requiresReversing(m)) {
+            reverse = true;
+            Pair<Double, Double> pair = new Pair<>(-magnitude, direction);
+            targetADPairList.set(m, pair);
+        } else {
+            Pair<Double, Double> pair = new Pair<>(magnitude, direction);
+            targetADPairList.set(m, pair);
         }
 
-        // Update the targetADPairList with the new Pair values
-        Pair<Double, Double> pair = new Pair<>(magnitude, direction);
-        targetADPairList.set(m, pair);
     }
 
     public double getVelocity(int tickChange, double timeChange) {
@@ -131,7 +131,6 @@ public class vectorsToAngleAndDrive {
         for (int i = 0; i < angles.length; i++) {
             updateMagnitudeDirectionPair(angles[i], i);
             // refresh target numbers based on current pose
-            int tickChange = driveMotors[i].getCurrentPosition() - lastDriveEncoders[i];
             // calculate current velocity
             if (!dontMove) {
                 anglePID[i].setSetPoint(targetADPairList.get(i).second);
@@ -156,8 +155,8 @@ public class vectorsToAngleAndDrive {
 
 //            // this is returning 0 for some reason
 //            // set PID current to current things
-            angleMotors[i].setPower(-angleOutput);
-            driveMotors[i].setPower(speedOutput);
+//            angleMotors[i].setPower(-angleOutput);
+//            driveMotors[i].setPower(speedOutput);
 
             lastDriveEncoders[i] = driveMotors[i].getCurrentPosition();
 
@@ -192,6 +191,11 @@ public class vectorsToAngleAndDrive {
         t.addData("FRDrive", drivePowers[1]);
         t.addData("BLDrive", drivePowers[2]);
         t.addData("BRDrive", drivePowers[3]);
+        t.addData("reverseFL", angleFixer.reverses()[0]);
+        t.addData("reverseFR", angleFixer.reverses()[1]);
+        t.addData("reverseBL", angleFixer.reverses()[2]);
+        t.addData("reverseBR", angleFixer.reverses()[3]);
+
         t.update();
     }
 }

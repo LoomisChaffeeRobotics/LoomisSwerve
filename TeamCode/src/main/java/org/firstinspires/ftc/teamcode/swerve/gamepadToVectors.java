@@ -8,8 +8,8 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import org.firstinspires.ftc.robotcore.external.NonConst;
 
 public class gamepadToVectors {
-    public double maxTranslationSpeed = 100.0;
-    public double maxRotationSpeed = 100;
+    public double maxTranslationSpeed = 1;
+    public double maxRotationSpeed = 0.5;
     public double ROBOT_LENGTH = 1.0;  // Length
     public double ROBOT_WIDTH = 1.0;   // Width
 
@@ -34,14 +34,12 @@ public class gamepadToVectors {
     }
 
     public double[] getCombinedVector (double x, double y,double rx, Wheel wheel) {
-
-
             double[] translationVector = getTranslationVector(x, y);
             double rotationSpeed = getRotationSpeed(rx);
 
             double[] combinedVector = {
-                    translationVector[0] + rotationSpeed*Math.cos(getWheelAngle(wheel)),
-                    translationVector[1] + rotationSpeed*Math.sin(getWheelAngle(wheel)),
+                    translationVector[0] + rotationSpeed*Math.sin(getWheelAngle(wheel)),
+                    translationVector[1] + rotationSpeed*Math.cos(getWheelAngle(wheel)),
             };
 
             // public static variables for Length and Width
@@ -70,17 +68,17 @@ public class gamepadToVectors {
     public double getWheelAngle(Wheel wheel) {
         double angle = 0.0;
         switch (wheel) {
-            case bl:
+            case fl:
                 angle = Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) + Math.PI / 2;
                 break;
-            case fl:
+            case fr:
                 angle = Math.PI / 2 - Math.atan(ROBOT_WIDTH / ROBOT_LENGTH);
                 break;
-            case br:
+            case bl:
                 angle = 3 * Math.PI/2 - (Math.atan(ROBOT_WIDTH / ROBOT_LENGTH));
                 break;
-            case fr:
-                angle =  Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) - Math.PI/2;
+            case br:
+                angle =  Math.PI * 2 + Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) - Math.PI/2;
                 break;
         }
         return angle;

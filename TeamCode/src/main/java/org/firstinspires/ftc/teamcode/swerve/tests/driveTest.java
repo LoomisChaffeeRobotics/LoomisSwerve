@@ -11,9 +11,9 @@ import org.firstinspires.ftc.teamcode.swerve.vectorsToAngleAndDrive;
 @Config
 
 public class driveTest extends OpMode {
-    public static double P = 5e-3;
-    public static double I = 0;
-    public static double D = 0.00075;
+    public static double P = 0.01;
+    public static double I = 0.01;
+    public static double D = 0.0075;
     public static double dP = 1e-5;
     public static double dI = 1e-5;
     public static double dD = 1e-5;

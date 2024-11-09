@@ -33,13 +33,15 @@ public class voltageToAngleConstants {
     double smallToBigPulley = 0.3947368; // small:big --> small deg to big deg
     int[] rotations; // full small pulley rotations, added to how much degrees of current rotation
     ArrayList<AnalogInput> encoders = new ArrayList<>(); // list of objects, comes from user getting hardware map inputs
-    String logFilePath = String.format("%s/FIRST/wheelAngles.txt", Environment.getExternalStorageDirectory().getAbsolutePath());
-    File dataLog = AppUtil.getInstance().getSettingsFile(logFilePath);
+    public String logFilePath = String.format("%s/FIRST/wheelAngles.txt", Environment.getExternalStorageDirectory().getAbsolutePath());
+    public File dataLog = AppUtil.getInstance().getSettingsFile(logFilePath);
     double[] voltages; // these are from the analog inputs
-    double[] sm; // small pulley angle values NO ROTATIONS
+    public double[] sm; // small pulley angle values NO ROTATIONS
     double[] lastSm; //last small pulley angle for counting up/down rotations
     double[] angle; // big pulley angle values
     double[] differenceMs;
+    double[] offsets; // the offsets added to it to tell it where's zero, depends every reset, fix it.
+    String[] offsetStrings;
     double x1class;
     double x1classR;
     String[] lastAngStringsWriting; // last angle, but as strings
@@ -58,11 +60,13 @@ public class voltageToAngleConstants {
         voltages = new double[encoderNames.length];
         lastSm = new double[encoderNames.length];
         differenceMs = new double[encoderNames.length];
+        offsets = new double[encoderNames.length];
 //        lastVoltage = new double[encoderNames.length];
 
         lastAngStringsWriting = new String[encoderNames.length];
         smallAngString = new String[encoderNames.length];
         smallRotString = new String[encoderNames.length];
+        offsetStrings = new String[encoderNames.length];
 
         fileDataRaw = ReadWriteFile.readFile(dataLog);
     }
@@ -78,8 +82,10 @@ public class voltageToAngleConstants {
         angle = Arrays.stream(Arrays.copyOfRange(valuesReading, 0, 4)).mapToDouble(Double::parseDouble).toArray();
         rotations = Arrays.stream(Arrays.copyOfRange(valuesReading, 4, 8)).mapToInt(Integer::parseInt).toArray();
         sm = Arrays.stream(Arrays.copyOfRange(valuesReading, 8, 12)).mapToDouble(Double::parseDouble).toArray();
+        offsets = Arrays.stream(Arrays.copyOfRange(valuesReading, 12, 16)).mapToDouble(Double::parseDouble).toArray();
+        System.arraycopy(valuesReading, 12, offsetStrings, 0, offsets.length);
+        // these get reprinted later as initialized
         System.arraycopy(sm, 0, lastSm, 0, 4);
-
         opMode.telemetry.addLine("Done Reading");
         opMode.telemetry.addData("Big Angles", Arrays.toString(angle));
         opMode.telemetry.addData("Small rotations", Arrays.toString(rotations));
@@ -197,6 +203,7 @@ public class voltageToAngleConstants {
 
         writingFinal = ArrayUtils.addAll(lastAngStringsWriting,smallRotString);
         writingFinal = ArrayUtils.addAll(writingFinal, smallAngString);
+        writingFinal = ArrayUtils.addAll(writingFinal, offsetStrings);
         ReadWriteFile.writeFile(dataLog, Arrays.toString(writingFinal));
         Arrays.fill(writingFinal, null);
         opMode.telemetry.addData("Big Angles", Arrays.toString(angle));
@@ -268,13 +275,43 @@ public class voltageToAngleConstants {
         // this updates the small pulley things
     }
     public void updateBigPulleyCalculator(int m) {
-        double degreesRaw = sm[m] + (rotations[m] * 360);
-        double tempAng = (degreesRaw * smallToBigPulley) % 360;
-        if (tempAng < 0 ) {
-            tempAng += 360;
+        switch (m) {
+            case 0:
+                double degreesRawFL = sm[m] + (rotations[m] * 360) + offsets[0];
+                double tempAngFL = (degreesRawFL * smallToBigPulley) % 360;
+                if (tempAngFL < 0) {
+                    tempAngFL += 360;
+                }
+                angle[m] = tempAngFL;
+                break;
+            case 1:
+                double frOffset = -130.5;
+                double degreesRawFR = sm[m] + (rotations[m] * 360) + offsets[1];
+                double tempAngFR = (-1 * (degreesRawFR * smallToBigPulley) ) % 360;
+                if (tempAngFR < 0) {
+                    tempAngFR += 360;
+                }
+                angle[m] = tempAngFR;
+                break;
+            case 2:
+                double blOffset = -113;
+                double degreesRawBL = sm[m] + (rotations[m] * 360) + offsets[2];
+                double tempAngBL= (degreesRawBL * smallToBigPulley) % 360;
+                if (tempAngBL < 0) {
+                    tempAngBL += 360;
+                }
+                angle[m] = tempAngBL;
+                break;
+            case 3:
+                double brOffset = -345;
+                double degreesRawBR = sm[m] + (rotations[m] * 360) + offsets[3];
+                double tempAngBR = (degreesRawBR * smallToBigPulley) % 360;
+                if (tempAngBR < 0) {
+                    tempAngBR += 360;
+                }
+                angle[m] = tempAngBR;
+                break;
         }
-        angle[m] = tempAng;
-
     }
 
 
