@@ -20,11 +20,11 @@ public class testStickAngs extends OpMode {
 
     @Override
     public void loop() {
-        double[] vector = a.getCombinedVector(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x, gamepadToVectors.Wheel.values()[0]);
-        double angle = Math.toDegrees(Math.atan2(vector[0], vector[1])) + 180;
-        telemetry.addData("angle", angle);
-        t2.addData("ang", angle);
-        t2.update();
-        telemetry.update();
+//        double[] vector = a.getCombinedVector(gamepad1.left_stick_x, gamepad1.left_stick_y, gamepad1.right_stick_x, gamepadToVectors.Wheel.values()[0]);
+//        double angle = Math.toDegrees(Math.atan2(vector[0], vector[1])) + 180;
+//        telemetry.addData("angle", angle);
+//        t2.addData("ang", angle);
+//        t2.update();
+//        telemetry.update();
     }
 }

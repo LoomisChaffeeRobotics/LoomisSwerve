@@ -4,11 +4,13 @@ package org.firstinspires.ftc.teamcode.swerve;
 import android.util.Pair;
 
 import com.arcrobotics.ftclib.controller.PIDController;
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
@@ -16,7 +18,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import java.util.ArrayList;
 
 
-public class vectorsToAngleAndDrive {
+public class SwerveDrive {
     OpMode OM;
     Gamepad gamepad; // perhaps a set power method would be better here?
     private static double aP, aI, aD, dP, dI, dD;
@@ -35,8 +37,9 @@ public class vectorsToAngleAndDrive {
     ElapsedTime motorTimer;
     OptimalAngleCalculator angleFixer;
     double[] angles = new double[4];
+    IMU imu;
     ArrayList<Pair<Double,Double>> targetADPairList = new ArrayList<>(4); // key = mag, value = direction
-    public vectorsToAngleAndDrive(double length, double width, double maxRot, double maxTrans, OpMode opmode, Gamepad GP, HardwareMap hw, String[] encoderNames, String[] driveNames, String[] angleNames, double angleP, double angleI, double angleD, double driveP, double driveI, double driveD) {
+    public SwerveDrive(double length, double width, double maxRot, double maxTrans, OpMode opmode, Gamepad GP, HardwareMap hw, String[] encoderNames, String[] driveNames, String[] angleNames, double angleP, double angleI, double angleD, double driveP, double driveI, double driveD) {
         OM = opmode;
         gamepad = GP;
         aP = angleP; //I don't know what I'm doing - owner of the code
@@ -54,6 +57,7 @@ public class vectorsToAngleAndDrive {
         vectorGetter.maxTranslationSpeed = maxTrans;
         vectorGetter.ROBOT_LENGTH = length;
         vectorGetter.ROBOT_WIDTH = width;
+
         driveMotors[0] = hw.get(DcMotor.class, driveNames[0]);
         driveMotors[1] = hw.get(DcMotor.class, driveNames[1]);
         driveMotors[2] = hw.get(DcMotor.class, driveNames[2]);
@@ -62,6 +66,15 @@ public class vectorsToAngleAndDrive {
         angleMotors[1] = hw.get(CRServo.class, angleNames[1]);
         angleMotors[2] = hw.get(CRServo.class, angleNames[2]);
         angleMotors[3] = hw.get(CRServo.class, angleNames[3]);
+        imu = hw.get(IMU.class, "imu");
+        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+                //CHANGE THESE ONCE ORIENTATION IS KNOW
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
+        // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
+        imu.initialize(parameters);
+        // Adjust the orientation parameters to match your robot
+
         motorTimer = new ElapsedTime();
         for (int i = 0; i < driveMotors.length; i++) {
             lastDriveEncoders[i] = driveMotors[i].getCurrentPosition();
@@ -78,10 +91,12 @@ public class vectorsToAngleAndDrive {
         angleGetter.init_loop();
     }
     public void updateMagnitudeDirectionPair(double currentAngle, int m) {
+        double theta = imu.getRobotYawPitchRollAngles().getYaw();
         // Get the combined vector from gamepad inputs
         double[] componentsVector = vectorGetter.getCombinedVector(
-                gamepad.left_stick_x,
-                gamepad.left_stick_y,
+                theta,
+                -gamepad.left_stick_x,
+                -gamepad.left_stick_y,
                 -gamepad.right_stick_x,
                 gamepadToVectors.Wheel.values()[m]
         );
@@ -103,13 +118,14 @@ public class vectorsToAngleAndDrive {
             dontMove = true;
             return;
         }
-
+//        magnitude *= Math.abs(Math.cos(direction-angles[m]));
         // Adjust the magnitude if a direction reversal is needed
         if (angleFixer.requiresReversing(m)) {
             reverse = true;
             Pair<Double, Double> pair = new Pair<>(-magnitude, direction);
             targetADPairList.set(m, pair);
         } else {
+            reverse = false;
             Pair<Double, Double> pair = new Pair<>(magnitude, direction);
             targetADPairList.set(m, pair);
         }
@@ -155,7 +171,7 @@ public class vectorsToAngleAndDrive {
 
 //            // this is returning 0 for some reason
 //            // set PID current to current things
-//            angleMotors[i].setPower(-angleOutput);
+            angleMotors[i].setPower(-angleOutput);
 //            driveMotors[i].setPower(speedOutput);
 
             lastDriveEncoders[i] = driveMotors[i].getCurrentPosition();

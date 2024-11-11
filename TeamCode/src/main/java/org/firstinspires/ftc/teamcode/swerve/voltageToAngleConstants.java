@@ -12,6 +12,7 @@ import android.os.Environment;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.ReadWriteFile;
 
@@ -53,6 +54,7 @@ public class voltageToAngleConstants {
     OpMode opMode; // for telemetry when done reading
     public voltageToAngleConstants(OpMode opMode, HardwareMap hw, String[] encoderNames) {
         this.opMode = opMode;
+
 
         for (String encoderName : encoderNames) {
             encoders.add(hw.get(AnalogInput.class, encoderName));
@@ -278,7 +280,7 @@ public class voltageToAngleConstants {
         switch (m) {
             case 0:
                 double degreesRawFL = sm[m] + (rotations[m] * 360) + offsets[0];
-                double tempAngFL = (degreesRawFL * smallToBigPulley) % 360;
+                double tempAngFL = ((degreesRawFL * smallToBigPulley) ) % 360;
                 if (tempAngFL < 0) {
                     tempAngFL += 360;
                 }
@@ -287,7 +289,7 @@ public class voltageToAngleConstants {
             case 1:
                 double frOffset = -130.5;
                 double degreesRawFR = sm[m] + (rotations[m] * 360) + offsets[1];
-                double tempAngFR = (-1 * (degreesRawFR * smallToBigPulley) ) % 360;
+                double tempAngFR = ((-1 * (degreesRawFR * smallToBigPulley) ) ) % 360;
                 if (tempAngFR < 0) {
                     tempAngFR += 360;
                 }
@@ -296,7 +298,7 @@ public class voltageToAngleConstants {
             case 2:
                 double blOffset = -113;
                 double degreesRawBL = sm[m] + (rotations[m] * 360) + offsets[2];
-                double tempAngBL= (degreesRawBL * smallToBigPulley) % 360;
+                double tempAngBL= ((degreesRawBL * smallToBigPulley) )% 360;
                 if (tempAngBL < 0) {
                     tempAngBL += 360;
                 }
@@ -305,7 +307,7 @@ public class voltageToAngleConstants {
             case 3:
                 double brOffset = -345;
                 double degreesRawBR = sm[m] + (rotations[m] * 360) + offsets[3];
-                double tempAngBR = (degreesRawBR * smallToBigPulley) % 360;
+                double tempAngBR = ((degreesRawBR * smallToBigPulley) ) % 360;
                 if (tempAngBR < 0) {
                     tempAngBR += 360;
                 }

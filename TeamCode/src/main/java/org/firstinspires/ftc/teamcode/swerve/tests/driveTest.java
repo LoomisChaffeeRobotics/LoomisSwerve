@@ -6,18 +6,18 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.swerve.vectorsToAngleAndDrive;
+import org.firstinspires.ftc.teamcode.swerve.SwerveDrive;
 @TeleOp
 @Config
 
 public class driveTest extends OpMode {
-    public static double P = 0.01;
+    public static double P = 0.06;
     public static double I = 0.01;
-    public static double D = 0.0075;
+    public static double D = 0.005;
     public static double dP = 1e-5;
     public static double dI = 1e-5;
     public static double dD = 1e-5;
-    vectorsToAngleAndDrive SwerveDrive;
+    org.firstinspires.ftc.teamcode.swerve.SwerveDrive SwerveDrive;
     Telemetry telemetry2;
     FtcDashboard dash;
     String[] encoderNames = {
@@ -41,7 +41,7 @@ public class driveTest extends OpMode {
 
     @Override
     public void init() {
-        SwerveDrive = new vectorsToAngleAndDrive(
+        SwerveDrive = new SwerveDrive(
                 18, 18, 12, 12,
                 this, gamepad1, hardwareMap,
                 encoderNames, driveNames, angleNames, P, I, D, dP, dI, dD);

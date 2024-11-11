@@ -4,17 +4,17 @@ import androidx.annotation.NonNull;
 
 
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.NonConst;
 
 public class gamepadToVectors {
     public double maxTranslationSpeed = 1;
-    public double maxRotationSpeed = 0.5;
+    public double maxRotationSpeed = 1;
     public double ROBOT_LENGTH = 1.0;  // Length
     public double ROBOT_WIDTH = 1.0;   // Width
-
-
-    public double[] limitVector(double[] vector, double maxSpeed) {
+    IMU imu;
+    public double[] limitVector(double[] vector, double maxSpeed) { // normalizes a greater vector to the max speed
         double magnitude = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
         if (magnitude > maxSpeed) {
             vector[0] = (vector[0] / magnitude) * maxSpeed;
@@ -25,29 +25,61 @@ public class gamepadToVectors {
 
     public double[] getTranslationVector(double translateX, double translateY) {
         double[] translationVector = {translateX, translateY};
-
         return limitVector(translationVector, maxTranslationSpeed);
     }
 
     public double getRotationSpeed(double rotationX) {
         return rotationX * maxRotationSpeed; // ask emma about gamepad
     }
+    public double[] fieldCentrifyVector(double theta, double rx, double[] targetVector, Wheel wheel) {
+        double x = targetVector[0];
+        double y = targetVector[1];
 
-    public double[] getCombinedVector (double x, double y,double rx, Wheel wheel) {
+        double fieldX = x * Math.cos(theta) - y * Math.sin(theta);
+        double fieldY = x * Math.sin(theta) + y * Math.cos(theta);
+
+        double a = fieldX - rx * (1/Math.sqrt(2));
+        double b = fieldX + rx * (1/Math.sqrt(2));
+        double c = fieldY - rx * (1/Math.sqrt(2));
+        double d = fieldY + rx * (1/Math.sqrt(2));
+
+        double[] output;
+        switch (wheel) {
+            case fl:
+                output = new double[]{b, d};
+                break;
+            case fr:
+                output = new double[]{b, c};
+                break;
+            case bl:
+                output = new double[]{a, d};
+                break;
+            case br:
+                output = new double[]{a, c};
+                break;
+        }
+
+        return output;
+    }
+
+    public double[] getCombinedVector (double theta, double x, double y,double rx, Wheel wheel) {
             double[] translationVector = getTranslationVector(x, y);
-            double rotationSpeed = getRotationSpeed(rx);
+            double[] fcVector = fieldCentrifyVector(theta, rx, translationVector, wheel);
 
-            double[] combinedVector = {
-                    translationVector[0] + rotationSpeed*Math.sin(getWheelAngle(wheel)),
-                    translationVector[1] + rotationSpeed*Math.cos(getWheelAngle(wheel)),
-            };
+
+//            double rotationSpeed = getRotationSpeed(rx);
+//
+//            double[] combinedVector = {
+//                    fcVector[0] + rotationSpeed*Math.sin(getWheelAngle(wheel)),
+//                    fcVector[1] + rotationSpeed*Math.cos(getWheelAngle(wheel)),
+//            };
 
             // public static variables for Length and Width
             //some way to tell which wheel is being talked about
             //arctan calculations as seen above
             //return based on which wheel it is after adding it
 
-            return combinedVector;
+            return fcVector;
 
     }
 
@@ -72,10 +104,10 @@ public class gamepadToVectors {
                 angle = Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) + Math.PI / 2;
                 break;
             case fr:
-                angle = Math.PI / 2 - Math.atan(ROBOT_WIDTH / ROBOT_LENGTH);
+                angle = 3 * Math.PI / 2 - Math.atan(ROBOT_WIDTH / ROBOT_LENGTH);
                 break;
             case bl:
-                angle = 3 * Math.PI/2 - (Math.atan(ROBOT_WIDTH / ROBOT_LENGTH));
+                angle = Math.PI/2 - (Math.atan(ROBOT_WIDTH / ROBOT_LENGTH));
                 break;
             case br:
                 angle =  Math.PI * 2 + Math.atan(ROBOT_WIDTH / ROBOT_LENGTH) - Math.PI/2;
