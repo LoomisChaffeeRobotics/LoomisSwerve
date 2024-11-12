@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 public class SwerveDrive {
     OpMode OM;
+    double theta;
     Gamepad gamepad; // perhaps a set power method would be better here?
     private static double aP, aI, aD, dP, dI, dD;
     boolean dontMove;
@@ -87,17 +88,20 @@ public class SwerveDrive {
 
         // init the other devices
     }
+    public void resetIMU() { imu.resetYaw();}
     public void init_loop () {
         angleGetter.init_loop();
     }
     public void updateMagnitudeDirectionPair(double currentAngle, int m) {
-        double theta = imu.getRobotYawPitchRollAngles().getYaw();
-        // Get the combined vector from gamepad inputs
+        theta = imu.getRobotYawPitchRollAngles().getYaw() + 90;
+        if (theta < 0) {theta +=360; }
+        else if (theta > 360) {theta -=360; }
+            // Get the combined vector from gamepad inputs
         double[] componentsVector = vectorGetter.getCombinedVector(
                 theta,
                 -gamepad.left_stick_x,
                 -gamepad.left_stick_y,
-                -gamepad.right_stick_x,
+                gamepad.right_stick_x,
                 gamepadToVectors.Wheel.values()[m]
         );
 
@@ -118,7 +122,7 @@ public class SwerveDrive {
             dontMove = true;
             return;
         }
-//        magnitude *= Math.abs(Math.cos(direction-angles[m]));
+        magnitude *= Math.abs(Math.cos(Math.abs(angles[m]-direction)));
         // Adjust the magnitude if a direction reversal is needed
         if (angleFixer.requiresReversing(m)) {
             reverse = true;
@@ -172,7 +176,7 @@ public class SwerveDrive {
 //            // this is returning 0 for some reason
 //            // set PID current to current things
             angleMotors[i].setPower(-angleOutput);
-//            driveMotors[i].setPower(speedOutput);
+            driveMotors[i].setPower(speedOutput);
 
             lastDriveEncoders[i] = driveMotors[i].getCurrentPosition();
 
@@ -211,7 +215,11 @@ public class SwerveDrive {
         t.addData("reverseFR", angleFixer.reverses()[1]);
         t.addData("reverseBL", angleFixer.reverses()[2]);
         t.addData("reverseBR", angleFixer.reverses()[3]);
-
+        t.addData("yaw", theta);
+        t.addData("offsetFL", angleGetter.offsets[0]);
+        t.addData("offsetFR", angleGetter.offsets[1]);
+        t.addData("offsetBL", angleGetter.offsets[2]);
+        t.addData("offsetBR", angleGetter.offsets[3]);
         t.update();
     }
 }

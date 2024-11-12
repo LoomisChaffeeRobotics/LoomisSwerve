@@ -34,27 +34,27 @@ public class gamepadToVectors {
     public double[] fieldCentrifyVector(double theta, double rx, double[] targetVector, Wheel wheel) {
         double x = targetVector[0];
         double y = targetVector[1];
+        double theta2 = Math.toRadians(theta);
+        double fieldX = x * Math.cos(theta2) - y * Math.sin(theta2);
+        double fieldY = x * Math.sin(theta2) + y * Math.cos(theta2);
 
-        double fieldX = x * Math.cos(theta) - y * Math.sin(theta);
-        double fieldY = x * Math.sin(theta) + y * Math.cos(theta);
+        double a = fieldX + rx * (1/Math.sqrt(2));
+        double b = fieldX - rx * (1/Math.sqrt(2));
+        double c = fieldY + rx * (1/Math.sqrt(2));
+        double d = fieldY - rx * (1/Math.sqrt(2));
 
-        double a = fieldX - rx * (1/Math.sqrt(2));
-        double b = fieldX + rx * (1/Math.sqrt(2));
-        double c = fieldY - rx * (1/Math.sqrt(2));
-        double d = fieldY + rx * (1/Math.sqrt(2));
-
-        double[] output;
+        double[] output = new double[2];
         switch (wheel) {
-            case fl:
+            case bl:
                 output = new double[]{b, d};
                 break;
-            case fr:
+            case br:
                 output = new double[]{b, c};
                 break;
-            case bl:
+            case fl:
                 output = new double[]{a, d};
                 break;
-            case br:
+            case fr:
                 output = new double[]{a, c};
                 break;
         }
@@ -89,7 +89,7 @@ public class gamepadToVectors {
 
         //which wheel
     public enum Wheel {
-        fl, bl, fr, br
+        fl, fr, bl, br
     }
 
     public double getRotationRadius() {

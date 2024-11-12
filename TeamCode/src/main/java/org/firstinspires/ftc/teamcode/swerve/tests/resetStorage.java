@@ -29,10 +29,10 @@ public class resetStorage extends OpMode {
     double[] offsetsNegative;
     String[] offsetsString;
     String[] zeroes = {
-            "0.0",
-            "0.0",
-            "0.0",
-            "0.0",
+            "360.0",
+            "360.0",
+            "360.0",
+            "360.0",
             "0",
             "0",
             "0",
@@ -51,12 +51,13 @@ public class resetStorage extends OpMode {
         telemetry2 = dashboard.getTelemetry();
         filePath = angles.dataLog;
         smallAngles = new String[4];
+        angles.init_loop();
     }
     public void init_loop() {
-        angles.init_loop();
+        angles.loop();
         for (int i = 0; i < angles.sm.length; i++) {
             smallAngles[i] = Double.toString(angles.sm[i]);
-            offsetsNegative[i] = -1 * (angles.sm[i]-9);
+            offsetsNegative[i] = -1 * (angles.sm[i]);
             offsetsString[i] = Double.toString(offsetsNegative[i]);
         }
         writingFinal = ArrayUtils.addAll(zeroes, smallAngles);

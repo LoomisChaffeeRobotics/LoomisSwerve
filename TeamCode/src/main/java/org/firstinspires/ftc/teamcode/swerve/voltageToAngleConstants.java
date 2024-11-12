@@ -41,7 +41,7 @@ public class voltageToAngleConstants {
     double[] lastSm; //last small pulley angle for counting up/down rotations
     double[] angle; // big pulley angle values
     double[] differenceMs;
-    double[] offsets; // the offsets added to it to tell it where's zero, depends every reset, fix it.
+    public double[] offsets; // the offsets added to it to tell it where's zero, depends every reset, fix it.
     String[] offsetStrings;
     double x1class;
     double x1classR;
@@ -51,6 +51,7 @@ public class voltageToAngleConstants {
     String[] valuesReading = null; // used for reading at the beginning of opmodes
     String lastLineValue = null;
     String fileDataRaw;
+    public String[] writingFinal;
     OpMode opMode; // for telemetry when done reading
     public voltageToAngleConstants(OpMode opMode, HardwareMap hw, String[] encoderNames) {
         this.opMode = opMode;
@@ -191,7 +192,7 @@ public class voltageToAngleConstants {
        Small rotation       ...
        Small Angle          ...
         */
-        String[] writingFinal;
+
         for (int m = 0; m < modulesTable.size(); m++) {
             voltages[m] = encoders.get(m).getVoltage();
             smallPulleyAngleAccumulator(voltages[m], m);

@@ -59,5 +59,6 @@ public class driveTest extends OpMode {
         SwerveDrive.getTelemetry(telemetry2);
         telemetry.update();
         telemetry2.update();
+        if (gamepad1.a) { SwerveDrive.resetIMU();}
     }
 }
