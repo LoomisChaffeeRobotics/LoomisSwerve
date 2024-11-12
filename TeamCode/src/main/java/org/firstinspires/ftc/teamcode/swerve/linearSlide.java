@@ -9,8 +9,8 @@ public class linearSlide extends LinearOpMode {
 
     private DcMotor slideMotor;
 
-    private static final int RobotBase_to_LS = 17;  // Distance from the front of the robot to the slide base
-    private static final int Max_Extension = 42; // Maximum safe extension distance from slide base
+    private static final double RobotBase_to_LS = 219.160;  // Distance from the front of the robot to the slide base
+    private static final double Max_Extension = 42; // Max safe extension distance from slide base
 
     // PID constants
     private double kP = 0.01;
@@ -21,6 +21,7 @@ public class linearSlide extends LinearOpMode {
     private double integral = 0;
     private double lastError = 0;
     private int targetPosition = 0;  // Starting at initial position (adjust)
+
     @Override
     public void runOpMode() {
         // Initialize motor
@@ -40,10 +41,10 @@ public class linearSlide extends LinearOpMode {
             }
 
             // Clamp target position to a safe range (adjust limits as needed)
-            targetPosition = Math.max(0, Math.min(targetPosition, 4000));
+            targetPosition = Math.max(0, Math.min(targetPosition, 360));
 
             // Calculate current forward reach
-            int currentExtension = slideMotor.getCurrentPosition() + RobotBase_to_LS;
+            double currentExtension = slideMotor.getCurrentPosition() + RobotBase_to_LS;
 
             // Ensure the slide does not exceed max forward extension
             if ((targetPosition > slideMotor.getCurrentPosition() && currentExtension < Max_Extension) ||
@@ -54,9 +55,6 @@ public class linearSlide extends LinearOpMode {
             } else {
                 slideMotor.setPower(0);  // Stop motor if exceeding extension limits (failsafe)
             }
-
-
-
 
             // Update the slide motor power using PID
             double power = calculatePID(targetPosition, slideMotor.getCurrentPosition());
