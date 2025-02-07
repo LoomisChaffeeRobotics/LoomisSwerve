@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.swerve.tests;
+package org.firstinspires.ftc.teamcode.tests;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
@@ -11,6 +11,7 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 @TeleOp
 public class imuTest extends OpMode {
+    double iDnumber = 2;
     IMU imu;
     FtcDashboard dash;
     Telemetry t2;
@@ -19,8 +20,8 @@ public class imuTest extends OpMode {
         imu = hardwareMap.get(IMU.class, "imu");
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 //CHANGE THESE ONCE ORIENTATION IS KNOW
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
+                RevHubOrientationOnRobot.LogoFacingDirection.BACKWARD,
+                RevHubOrientationOnRobot.UsbFacingDirection.UP));
         // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
         imu.initialize(parameters);
         dash = FtcDashboard.getInstance();

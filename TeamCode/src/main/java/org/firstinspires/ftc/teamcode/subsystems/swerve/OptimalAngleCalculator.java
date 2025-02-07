@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.swerve;
+package org.firstinspires.ftc.teamcode.subsystems.swerve;
 
 import java.util.Arrays;
 
@@ -38,6 +38,31 @@ public class OptimalAngleCalculator {
             requiresReversing[m] = true;
         } else {
             requiresReversing[m] = false;
+        }
+
+        return angs[index];
+    }
+    public double calculateOptimalAngle(double current, double target) {
+        double[] angs = {
+                target,
+                target + 180,
+                target + 360,
+                target - 180,
+                target - 360
+        };
+
+        double[] diffs = new double[5];
+        for (int i = 0; i < angs.length; i++) {
+            diffs[i] = Math.abs(angs[i] - current);
+        }
+
+        int index = 0;
+        double min = diffs[index];
+        for (int i = 1; i < diffs.length; i++) {
+            if (diffs[i] <=min) {
+                min = diffs[i];
+                index = i;
+            }
         }
 
         return angs[index];
