@@ -4,13 +4,6 @@ import java.util.Arrays;
 
 public class OptimalAngleCalculator {
     public boolean[] requiresReversing = new boolean[4];
-
-
-//    public OptimalAngleCalculator(double currentAngle, double vectorAngle)
-//    {
-//        calculateOptimalAngle(currentAngle, vectorAngle);
-//    }
-    // idt there are any parameters to need to be initialized (faster runtimes) but I might be wrong
     public double calculateOptimalAngle(double currentAngle, double vectorAngle, int m) {
         double[] angs = {
                 vectorAngle,
@@ -43,6 +36,7 @@ public class OptimalAngleCalculator {
         return angs[index];
     }
     public double calculateOptimalAngle(double current, double target) {
+        // general use optimal angle calculator
         double[] angs = {
                 target,
                 target + 180,
@@ -70,8 +64,4 @@ public class OptimalAngleCalculator {
     public boolean requiresReversing(int m) {
         return requiresReversing[m];
     }
-    public boolean[] reverses(){
-        return requiresReversing;
-    }
-    
 }

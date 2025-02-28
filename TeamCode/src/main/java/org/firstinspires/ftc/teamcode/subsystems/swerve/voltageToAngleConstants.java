@@ -27,19 +27,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class voltageToAngleConstants {
-    double smallToBigPulley = (double) 15 / 38; // small:big --> small deg to big deg
-    int[] rotations; // full small pulley rotations, added to how much degrees of current rotation
+    double smallToBigPulley = (double) 15 / 38; // small deg to big deg
+    int[] rotations; // full small pulley rotations
     ArrayList<AnalogInput> encoders = new ArrayList<>(); // list of objects, comes from user getting hardware map inputs
     public String logFilePath = String.format("%s/FIRST/wheelAngles.txt", Environment.getExternalStorageDirectory().getAbsolutePath());
     public File dataLog = AppUtil.getInstance().getSettingsFile(logFilePath);
-    double[] voltages; // these are from the analog inputs
-    public double[] sm; // small pulley angle values NO ROTATIONS
-    double[] lastSm; //last small pulley angle for counting up/down rotations
-    double[] angle; // big pulley angle values
+    double[] voltages;
+    public double[] sm; // small pulley angles, range from 0 to 360
+    double[] lastSm; // last small pulley angle for determining up/down rotations
+    double[] angle; // wheel angle values
     double[] differenceMs;
-    public double[] offsets; // the offsets added to it to tell it where's zero, depends every reset, fix it.
+    public double[] offsets; // the offsets added to it to tell it where's zero, depends on every reset
     String[] offsetStrings;
-    double x1class;
     String[] lastAngStringsWriting; // last angle, but as strings
     String[] smallAngString;
     String[] smallRotString;
@@ -47,7 +46,7 @@ public class voltageToAngleConstants {
     String lastLineValue = null;
     String fileDataRaw;
     String finalString;
-    double tempAngFL, tempAngFR, tempAngBL, tempAngBR;
+    double tempAngFL, tempAngFR, tempAngBL, tempAngBR; // this and degreesRaw are used for offsets to zero
     double degreesRawFL, degreesRawFR, degreesRawBL, degreesRawBR;
     OpMode opMode; // for telemetry when done reading
     public voltageToAngleConstants(OpMode opMode, HardwareMap hw, String[] encoderNames) {
@@ -71,12 +70,13 @@ public class voltageToAngleConstants {
         lastLineValue = fileDataRaw;
         lastLineValue = lastLineValue.replace("[", "").replace("]", "");
         valuesReading = lastLineValue.split(",");
+
+        // init values based on file from last OpMode
+        // <!> Wait until "Done Reading" telemetry shows up to start OpMode! <!>
         angle = Arrays.stream(Arrays.copyOfRange(valuesReading, 0, 4)).mapToDouble(Double::parseDouble).toArray();
         rotations = Arrays.stream(Arrays.copyOfRange(valuesReading, 4, 8)).mapToInt(Integer::parseInt).toArray();
         sm = Arrays.stream(Arrays.copyOfRange(valuesReading, 8, 12)).mapToDouble(Double::parseDouble).toArray();
         offsets = Arrays.stream(Arrays.copyOfRange(valuesReading, 12, 16)).mapToDouble(Double::parseDouble).toArray();
-        // These offsets get read once, but don't get rewritten unless reset in resetStorage
-        // This is why there's another array needed but not in loop()
         System.arraycopy(valuesReading, 12, offsetStrings, 0, offsets.length);
         System.arraycopy(sm, 0, lastSm, 0, 4);
         opMode.telemetry.addLine("Done Reading");
@@ -86,7 +86,7 @@ public class voltageToAngleConstants {
         opMode.telemetry.update();
 
     }
-    Map<Double,Double> bl = new LinkedHashMap<Double, Double>() {{ // Voltage up, degrees down
+    Map<Double,Double> bl = new LinkedHashMap<Double, Double>() {{
         put(0.0, 114.0);
         put(0.220, 90.0);
         put(0.634, 45.0);
@@ -99,7 +99,7 @@ public class voltageToAngleConstants {
         put(3.114, 135.0);
         put(3.307, 114.0);
     }};
-    Map<Double,Double> fr = new LinkedHashMap<Double, Double>() {{ // Voltage up, degrees not up
+    Map<Double,Double> fr = new LinkedHashMap<Double, Double>() {{
         put(0.0, 18.0);
         put(0.165, 0.0); //synthetic
         put(0.166, 360.0);
@@ -112,7 +112,7 @@ public class voltageToAngleConstants {
         put(3.059, 45.0);
         put(3.307, 18.0);
     }};
-    Map<Double,Double> fl = new LinkedHashMap<Double, Double>() {{ // Voltage up, degrees down.
+    Map<Double,Double> fl = new LinkedHashMap<Double, Double>() {{
         put(0.0, 90.0);
         put(0.413, 45.0);
         put(0.827, 0.0);
@@ -124,7 +124,7 @@ public class voltageToAngleConstants {
         put(2.894, 131.0);
         put(3.307, 90.0);
     }};
-    Map<Double,Double> br = new LinkedHashMap<Double, Double>() {{ // voltage up deg down (not side dependent)
+    Map<Double,Double> br = new LinkedHashMap<Double, Double>() {{
         put(0.0, 55.0);
         put(0.092, 45.0);
         put(0.46, 0.0);
@@ -160,30 +160,9 @@ public class voltageToAngleConstants {
         t.addData("smRawFL", voltages[0]);
         t.addData("smRawBR", voltages[3]);
         t.addData("smRawBL", voltages[2]);
-        t.addData("lastSM", differenceMs[3]);
-        t.addData("x1 class", x1class);
-        t.addData("modules", modulesTable.size());
-        t.addData("BLtemp", degreesRawBL * smallToBigPulley);
-        t.addData("BRtemp", degreesRawBR * smallToBigPulley);
-        t.addData("FLtemp", degreesRawFL * smallToBigPulley);
-        t.addData("FRtemp", degreesRawFR * smallToBigPulley);
-        t.addData("blr", degreesRawBL);
-        t.addData("brr", degreesRawBR );
-        t.addData("flr", degreesRawFL);
-        t.addData("frr", degreesRawFR);
         t.update();
     }
     public void loop() {
-//        ArrayList<Object> writingFinal;
-        /*      writing final looks like this
-       Big Angle            M1, M2... MN
-       Small rotation       ...
-       Small Angle          ...
-
-       except it's all one line and it actually looks like:
-
-        */
-
         for (int m = 0; m < modulesTable.size(); m++) {
             voltages[m] = encoders.get(m).getVoltage();
         }
@@ -197,10 +176,15 @@ public class voltageToAngleConstants {
         opMode.telemetry.addData("Small rotations", Arrays.toString(rotations));
         opMode.telemetry.addData("Small Angles", Arrays.toString(sm));
         System.arraycopy(sm, 0, lastSm, 0, 4);
-        // write to the txt everything (it overwrites it thankfully)
-        // everything being big pulley angle > small pulley full rotations > small pulley angle pose
+
     }
     public void stopAndLog() {
+        /*      writing final looks like this all in one line
+        Big Angle            M1, M2... MN
+        Small rotation       M1 ...
+        Small Angle          M1 ...
+        Offsets              M1 ...
+         */
         for (int m = 0; m < modulesTable.size(); m++) {
             voltages[m] = encoders.get(m).getVoltage();
         }
@@ -240,11 +224,11 @@ public class voltageToAngleConstants {
         return angle;
     }
     public double voltsToAngle(double voltage, int module) {
+        // Linear interpolation
         double out;
         Map<Double, Double> targetTable = modulesTable.get(module);
         Set<Double> keySet = targetTable.keySet();
         Collection<Double> valueSet = targetTable.values();
-        // both of the below are doubles but it won't let me
         Object[] values = valueSet.toArray();
         Object[] keys = keySet.toArray();
         if (keySet.contains(voltage)) {
@@ -258,9 +242,7 @@ public class voltageToAngleConstants {
                     y1 = Double.parseDouble(values[i-1].toString());
                     y2 = Double.parseDouble(values[i].toString());
                     m = (y2 - y1)/(x2 - x1);
-                    // point slope of the line b/w the points its between
                     out = (m * (voltage - x1)) + y1;
-                    // input x as the voltage into the formula
                     return out;
                 }
             }
@@ -279,11 +261,11 @@ public class voltageToAngleConstants {
             }
         }
         lastSm[module] = sm[module];
-        // this updates the small pulley things
+        // this updates the small pulley values and the rotations
     }
     public void updateBigPulleyCalculator(int m) {
         switch (m) {
-            // Can't find the core problem but the error seem linear to total distance moved and the solution might work
+            // 0.94 is to fix accumulation of linear error
             case 0:
                 degreesRawFL = sm[m] + (rotations[m] * 360) + offsets[0];
                 tempAngFL = ((degreesRawFL * smallToBigPulley)/ 0.94 ) % 360;

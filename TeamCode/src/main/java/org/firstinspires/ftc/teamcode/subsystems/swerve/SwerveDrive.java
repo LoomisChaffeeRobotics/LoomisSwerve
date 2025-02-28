@@ -36,16 +36,9 @@ import java.util.Arrays;
 
 @Config
 public class SwerveDrive {
-    public TrajectoryVelocityConstraint velocityConstraint = new MinVelocityConstraint(Arrays.asList(
-            new AngularVelocityConstraint(Math.toRadians(180)),
-            new MecanumVelocityConstraint(20, 11)
-    )); // i made this up
-    public TrajectoryAccelerationConstraint accelerationConstraint = new ProfileAccelerationConstraint(15);
-    public double maxAngAccel = Math.PI;
-    public double maxAngVel = Math.PI;
     OpMode OM;
-    Gamepad gamepad; // perhaps a set power method would be better here?
-    public final double DIST_MULT = 4/3; // Actually traveled/desired dist
+    Gamepad gamepad;
+    public final double DIST_MULT = 4/3; // Actual dist/desired dist
     public static double aP = 0.02;
     public static double aI = 0.01;
     public static double aD = 0.0015;
@@ -55,7 +48,7 @@ public class SwerveDrive {
     public SwerveDriveOdometry odo;
     public ElapsedTime timer;
     public SwerveModuleState[] states = new SwerveModuleState[4];
-    SwerveDriveKinematics kinematics; // FTCLIB FOR AUTO
+    SwerveDriveKinematics kinematics; // FTCLib used only for auto code
     public static double inchesPerTick = (0.061*Math.PI / 2.54 * 100)/770;
     voltageToAngleConstants angleGetter;
     gamepadToVectors vectorGetter;
@@ -70,7 +63,7 @@ public class SwerveDrive {
     double[] angles = new double[4];
     public Pose2d nowPose;
     public IMU imu;
-    ArrayList<Pair<Double,Double>> targetADPairList = new ArrayList<>(4); // key = mag, value = direction
+    ArrayList<Pair<Double,Double>> targetADPairList = new ArrayList<>(4); // List of pairs (magnitude, direction)
     public SwerveDrive(double length, double width, double maxRot, double maxTrans,
                        OpMode opmode, Gamepad GP, HardwareMap hw,
                        String[] encoderNames, String[] driveNames, String[] angleNames,
@@ -90,18 +83,14 @@ public class SwerveDrive {
             driveMotors[i].setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             driveMotors[i].setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             angleMotors[i] = hw.get(CRServo.class, angleNames[i]);
-            wheelLimiters[i] = new SlewRateLimiter(1/2.625);
+            wheelLimiters[i] = new SlewRateLimiter(1/2.625); // max servo-specific acceleration
         }
         imu = hw.get(IMU.class, "imu");
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-                //CHANGE THESE ONCE ORIENTATION IS KNOW
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
                 RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD));
-        // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
         imu.initialize(parameters);
         imu.resetYaw();
-        // Adjust the orientation parameter`s to match your robot
-
 
         for (int i = 0; i < driveMotors.length; i++) {
             driveSpeeds[i] = getVelocity(driveMotors[i]);
@@ -112,25 +101,19 @@ public class SwerveDrive {
         targetADPairList.add(new Pair<>(0.0, 0.0));
         targetADPairList.add(new Pair<>(0.0, 0.0));
         targetADPairList.add(new Pair<>(0.0, 0.0));
+
+        // only for auto
         kinematics = new SwerveDriveKinematics(
                 new Translation2d((6.5), (5.5)),
                 new Translation2d((6.5),(-5.5)),
                 new Translation2d((-4.5), (5.5)),
                 new Translation2d((-4.5), (-5.5)));
         odo = new SwerveDriveOdometry(kinematics, new Rotation2d(imu.getRobotYawPitchRollAngles().getYaw()), new Pose2d(startFTCLibX, startFTCLibY, new Rotation2d(startHeadingRads)));
-
         timer = new ElapsedTime();
         nowPose = new Pose2d();
-
         for (int i = 0; i < driveMotors.length; i++) {
-            if (Math.signum(driveSpeeds[i]) == -1) {
-                states[i] = new SwerveModuleState(-1 * driveSpeeds[i], new Rotation2d(Math.toRadians((angles[i] + 180) % 360)));
-            } else {
                 states[i] = new SwerveModuleState(driveSpeeds[i], new Rotation2d(Math.toRadians(angles[i])));
-            }
-
         }
-        // init the other devices
 
     }
     public void resetIMU() { imu.resetYaw();}
@@ -139,7 +122,7 @@ public class SwerveDrive {
         timer.reset();
     }
     public void updateMagnitudeDirectionPair(double x, double y, double rx, double currentAngle, int m) {
-            // Get the combined vector from gamepad inputs
+        // Get the translation & rotation vector from gamepad inputs
         double[] componentsVector = vectorGetter.getCombinedVector(
                 x,
                 y,
@@ -151,9 +134,10 @@ public class SwerveDrive {
         double magnitude = Math.sqrt(Math.pow(componentsVector[0], 2) + Math.pow(componentsVector[1], 2));
 
         double direction;
+        // don't try to get to a point if the joystick is in the deadzone
         if (Math.abs(magnitude) > 0.1) {
             direction = Math.toDegrees(Math.atan2(componentsVector[0], componentsVector[1])) + 180;
-            direction = angleFixer.calculateOptimalAngle(currentAngle, direction, m); // perhaps this is where fixes needed?
+            direction = angleFixer.calculateOptimalAngle(currentAngle, direction, m);
             dontMove = false;
         } else {
             Pair<Double, Double> pairNoMove = new Pair<>(0.0, targetADPairList.get(m).second);
@@ -161,8 +145,10 @@ public class SwerveDrive {
             dontMove = true;
             return;
         }
+
         // cosine compensation
         magnitude *= Math.abs(Math.cos(Math.toRadians(Math.abs(angles[m]-direction))));
+
         // Adjust the magnitude if a direction reversal is needed
         if (angleFixer.requiresReversing(m)) {
             reverse = true;
@@ -173,16 +159,16 @@ public class SwerveDrive {
             Pair<Double, Double> pair = new Pair<>(magnitude, direction);
             targetADPairList.set(m, pair);
         }
-
     }
     public void stop(){
         angleGetter.stopAndLog();
     }
     public double getVelocity(DcMotorEx motor) {
         double ticksPerSecond = motor.getVelocity();
-        return inchesPerTick * ticksPerSecond * DIST_MULT; // quick fix for now , x 100 but core issue is unk
+        return inchesPerTick * ticksPerSecond * DIST_MULT; // inches per second
     }
     public void loopFC(double theta, double x, double y, double rx) {
+        // Field Centrify
         double theta2 = Math.toRadians(theta);
         double fieldX = x * Math.cos(theta2) - y * Math.sin(theta2);
         double fieldY = x * Math.sin(theta2) + y * Math.cos(theta2);
@@ -195,8 +181,7 @@ public class SwerveDrive {
 
         for (int i = 0; i < angles.length; i++) {
             updateMagnitudeDirectionPair(x, y, rx, angles[i], i);
-            // refresh target numbers based on current pose
-            // calculate current velocity
+            // anglePID controls servo to get error to 0 only when trying to move
             double set;
             double diff;
             double angleOutput;
@@ -207,10 +192,11 @@ public class SwerveDrive {
             }
             diff = angles[i] - set;
             angleOutput = anglePID[i].calculate(diff, 0);
+            // rate limits change dynamically based on distance wheel needs to rotate
+            // this is to prevent unnecessary slow motor acceleration
             double magnitude = targetADPairList.get(i).first; // can be + or -
             double speedOutput;
-            // possibly: check if positive or negative, if newly positive or negative, use a diff limiter
-            if (magnitude != 0) {
+            if (Math.abs(magnitude) < 0.05) {
                 wheelLimiters[i].updateRateLimit(1/((2.53 * (Math.abs(angles[i]-targetADPairList.get(i).second))/90)+0.00000000000000001));
                 speedOutput = wheelLimiters[i].calculate(magnitude);
             } else {
@@ -229,19 +215,6 @@ public class SwerveDrive {
             states[i].speedMetersPerSecond = driveSpeeds[i];
             states[i].angle = new Rotation2d(Math.toRadians((angles[i])));
         }
-        /* I think this isn't updating the odo's pose, but it's doing smth else such
-        that calculating things where all are 0 deg etc somehow makes it think diagonally?
-
-        * check the angle fixing code for being wrong - States takes radians
-        * unknown angle range?
-        * something I did when typing htat comment last night fixed it
-
-        The update method of the odometry class updates the robot position on the field.
-        The update method takes in the gyro angle of the robot, along with an array of
-        SwerveModulePosition objects. It is important that the order in which you pass the
-        SwerveModulePosition objects is the same as the order in which you created the kinematics
-         object.
-         */
         nowPose = odo.updateWithTime(timer.seconds(), new Rotation2d(Math.toRadians(imu.getRobotYawPitchRollAngles().getYaw())), states);
     }
     public void getTelemetry(Telemetry t) {

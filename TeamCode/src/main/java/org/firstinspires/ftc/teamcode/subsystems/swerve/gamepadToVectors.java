@@ -8,24 +8,22 @@ public class gamepadToVectors {
     public double ROBOT_LENGTH = 1.0;  // Length
     public double ROBOT_WIDTH = 1.0;   // Width
     IMU imu;
-    public double[] limitVector(double[] vector, double maxSpeed) { // normalizes a greater vector to the max speed
+    public double[] limitVector(double[] vector) {
+        // normalizes a greater vector
         double magnitude = Math.sqrt(vector[0] * vector[0] + vector[1] * vector[1]);
-        if (magnitude > maxSpeed) {
-            vector[0] = (vector[0] / magnitude) * maxSpeed;
-            vector[1] = (vector[1] / magnitude) * maxSpeed;
+        if (magnitude > 1) {
+            vector[0] = (vector[0] / magnitude);
+            vector[1] = (vector[1] / magnitude);
         }
         return vector;
     }
 
     public double[] getTranslationVector(double translateX, double translateY) {
         double[] translationVector = {translateX, translateY};
-        return limitVector(translationVector, maxTranslationSpeed);
-    }
-
-    public double getRotationSpeed(double rotationX) {
-        return rotationX * maxRotationSpeed; // ask emma about gamepad
+        return limitVector(translationVector);
     }
     public double[] fieldCentrifyVector(double theta, double rx, double[] targetVector, Wheel wheel) {
+        // another field centric option at earlier stage than SwerveDrive's loopFC
         double x = targetVector[0];
         double y = targetVector[1];
         double theta2 = Math.toRadians(theta);
@@ -57,34 +55,25 @@ public class gamepadToVectors {
     }
     public double[] getCombinedVector (double x, double y,double rx, Wheel wheel) {
             double[] translationVector = getTranslationVector(x, y);
-//            double[] fcVector = fieldCentrifyVector(theta, rx, translationVector, wheel);
-
-
-            double rotationSpeed = getRotationSpeed(rx);
-
-            double[] combinedVector = {
-                    translationVector[0] + rotationSpeed*Math.sin(getWheelAngle(wheel)),
-                    translationVector[1] + rotationSpeed*Math.cos(getWheelAngle(wheel)),
-            };
-
-            // public static variables for Length and Width
-            //some way to tell which wheel is being talked about
-            //arctan calculations as seen above
-            //return based on which wheel it is after adding it
-
+            double rotationSpeed = rx;
+            double[] combinedVector;
+            if (translationVector[0] == 0 && translationVector[1] == 0) {
+                combinedVector = new double[]{
+                        // allow faster rotation in place
+                        translationVector[0] + 1.5 * rotationSpeed * Math.sin(getWheelAngle(wheel)),
+                        translationVector[1] + 1.5 * rotationSpeed * Math.cos(getWheelAngle(wheel)),
+                };
+            } else {
+                 combinedVector = new double[]{
+                        translationVector[0] + 1.25 *rotationSpeed*Math.sin(getWheelAngle(wheel)),
+                        translationVector[1] + 1.25 *rotationSpeed*Math.cos(getWheelAngle(wheel)),
+                };
+            }
             return combinedVector;
-
     }
-
-
-
-        // public static variables for robot dimensions
-
-        //which wheel
     public enum Wheel {
         fl, fr, bl, br
     }
-
     public double getRotationRadius() {
         return 0.5 * Math.sqrt(Math.pow(ROBOT_WIDTH, 2) + Math.pow(ROBOT_LENGTH, 2));
     }
