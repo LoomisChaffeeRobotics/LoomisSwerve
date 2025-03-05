@@ -27,7 +27,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class voltageToAngleConstants {
-    double smallToBigPulley = (double) 15 / 38; // small deg to big deg
+    double smallToBigPulley = (double) 16 / 38; // small deg to big deg
     int[] rotations; // full small pulley rotations
     ArrayList<AnalogInput> encoders = new ArrayList<>(); // list of objects, comes from user getting hardware map inputs
     public String logFilePath = String.format("%s/FIRST/wheelAngles.txt", Environment.getExternalStorageDirectory().getAbsolutePath());
