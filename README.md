@@ -2,6 +2,8 @@
 
 This is a repository with both the FTC SDK and the code we (FTC Team 40) used for our custom FTC swerve drivetrain in 2025. All code is within the `TeamCode` module. The `subsystems` package contains classes necessary for library function, while the `tests` package contains optional classes for troubleshooting and a basic drive TeleOp. Note that some variables will need to be tuned or customized based on robot design.
 
+If you have questions, feel free to create an Issue or otherwise reach out. This will be largely obsolete in a few years but for anyone looking to do something similar after the SystemCore shift, I'd be glad to help and whoever is running the organization then can probably get in touch.
+
 ## NOTICE
 
 This repository contains the public FTC SDK for the INTO THE DEEP (2024-2025) competition season.
